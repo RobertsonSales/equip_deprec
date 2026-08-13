@@ -1,0 +1,2124 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRUPO LABMEDIC – Dashboard de equipamentos adquiridos (v11)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+:root{
+  --navy:#0F2C5C;--navy2:#2E5AAC;--navy3:#4B7BD1;--acc:#E4ECFB;--acc2:#F1F5FE;
+  --gold:#C8952B;--gold2:#E4B24A;--teal:#0F9990;--teal2:#2FB8AF;--rose:#C0455B;--rose2:#E06B7F;
+  --success:#12A150;--warn:#E58A00;--danger:#D93655;
+  --bg:#EEF2F9;--bg2:#F6F8FC;--panel:#FFFFFF;--panel2:#FBFCFE;--panelSoft:#F5F8FE;
+  --txt:#0F1B32;--txt2:#25324E;--mut:#6A758E;--mut2:#8592AC;--bd:#D9E1EE;--bd2:#E8EDF6;--row:#F6F9FD;
+  --shadow-sm:0 1px 2px rgba(15,44,92,.05);
+  --shadow:0 1px 3px rgba(15,44,92,.06),0 12px 32px -8px rgba(15,44,92,.10);
+  --shadow-lg:0 4px 10px rgba(15,44,92,.08),0 24px 60px -12px rgba(15,44,92,.18);
+  --radius:14px;--radius-sm:10px;--radius-lg:18px;
+  --grad-hero:linear-gradient(120deg,#0B2450 0%,#1A3F86 50%,#2E5AAC 100%);
+  --grad-card:linear-gradient(180deg,#FFFFFF 0%,#FBFCFE 100%);
+  --grad-kpi:linear-gradient(135deg,rgba(46,90,172,.06) 0%,rgba(46,90,172,0) 60%);
+}
+html[data-theme="dark"]{
+  --navy:#0B1220;--navy2:#6E9BF0;--navy3:#8AB1F7;--acc:#1A2740;--acc2:#132039;
+  --gold:#E4B24A;--gold2:#F0C766;--teal:#48C9C0;--teal2:#65D9D0;--rose:#E0808F;--rose2:#EEA0AC;
+  --success:#34D07E;--warn:#F0A83A;--danger:#F26B85;
+  --bg:#080E19;--bg2:#0B111E;--panel:#111A2C;--panel2:#0E1626;--panelSoft:#131E36;
+  --txt:#EAF0FB;--txt2:#C7D2E7;--mut:#8E9BB7;--mut2:#6E7B96;--bd:#243149;--bd2:#1A2338;--row:#152039;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow:0 1px 3px rgba(0,0,0,.45),0 12px 32px -8px rgba(0,0,0,.55);
+  --shadow-lg:0 6px 14px rgba(0,0,0,.5),0 28px 60px -12px rgba(0,0,0,.6);
+  --grad-hero:linear-gradient(120deg,#050B18 0%,#0F1F3E 50%,#1E3A73 100%);
+  --grad-card:linear-gradient(180deg,#131E33 0%,#0F1828 100%);
+  --grad-kpi:linear-gradient(135deg,rgba(110,155,240,.10) 0%,rgba(110,155,240,0) 60%);
+}
+*{box-sizing:border-box}
+html,body{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:13px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  background-image:
+    radial-gradient(1200px 500px at -10% -20%,rgba(46,90,172,.09),transparent 60%),
+    radial-gradient(900px 400px at 110% 0%,rgba(200,149,43,.06),transparent 60%);
+  background-attachment:fixed;
+}
+html[data-theme="dark"] body{
+  background-image:
+    radial-gradient(1200px 500px at -10% -20%,rgba(46,90,172,.16),transparent 60%),
+    radial-gradient(900px 400px at 110% 0%,rgba(200,149,43,.10),transparent 60%);
+}
+
+/* ---------- HEADER ---------- */
+header{background:var(--grad-hero);color:#fff;padding:18px 28px;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  box-shadow:0 6px 24px -8px rgba(15,44,92,.35);
+  position:sticky;top:0;z-index:40;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+header::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(600px 200px at 15% 120%,rgba(255,255,255,.10),transparent 70%),
+  radial-gradient(500px 200px at 90% -30%,rgba(228,178,74,.14),transparent 70%);
+  pointer-events:none}
+header>*{position:relative}
+header h1{font-size:19px;margin:0;letter-spacing:.2px;font-weight:700}
+header .sub{font-size:11.5px;opacity:.82;margin-top:3px;font-weight:400;letter-spacing:.1px}
+.brand{width:46px;height:46px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.08));
+  display:grid;place-items:center;font-weight:800;font-size:15px;
+  border:1px solid rgba(255,255,255,.32);color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 12px rgba(0,0,0,.15);
+  letter-spacing:.5px;
+}
+.spacer{flex:1}
+.btn{background:var(--panel);color:var(--txt);border:1px solid var(--bd);
+  border-radius:var(--radius-sm);padding:9px 14px;font-size:12px;cursor:pointer;
+  font-family:inherit;font-weight:600;transition:all .18s ease;
+  display:inline-flex;align-items:center;gap:6px;line-height:1;
+  box-shadow:var(--shadow-sm);
+}
+.btn:hover{border-color:var(--navy2);color:var(--navy2);transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:var(--navy2);color:#fff;border-color:var(--navy2)}
+.btn.primary:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.dep-highlight{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#04241F;
+  border-color:rgba(255,255,255,.3);font-weight:800;letter-spacing:.15px;
+  box-shadow:0 10px 22px -10px rgba(15,153,144,.65), inset 0 1px 0 rgba(255,255,255,.35)}
+.btn.dep-highlight:hover{background:linear-gradient(135deg,#12ADA3,#3FC9C0);color:#04241F;
+  border-color:rgba(255,255,255,.5);transform:translateY(-1px) scale(1.01)}
+html[data-theme="dark"] .btn.dep-highlight{color:#03211C;background:linear-gradient(135deg,var(--teal),#5FDCD3)}
+header .btn{background:rgba(255,255,255,.13);color:#fff;border-color:rgba(255,255,255,.28);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+header .btn:hover{background:rgba(255,255,255,.24);color:#fff;border-color:rgba(255,255,255,.5)}
+main{padding:22px 28px 56px;max-width:1720px;margin:0 auto}
+
+/* ---------- CARD ---------- */
+.card{background:var(--grad-card);border:1px solid var(--bd);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px;
+  transition:box-shadow .2s ease, transform .2s ease;
+  position:relative;overflow:hidden;
+}
+.card:hover{box-shadow:var(--shadow-lg)}
+.card>h2{font-size:11.5px;margin:0 0 14px;color:var(--navy2);
+  text-transform:uppercase;letter-spacing:1.2px;font-weight:700;
+  display:flex;align-items:center;gap:9px;
+}
+.card>h2::before{content:"";width:4px;height:14px;background:linear-gradient(180deg,var(--navy2),var(--navy3));
+  border-radius:3px;display:inline-block;box-shadow:0 0 0 2px var(--acc2);
+}
+html[data-theme="dark"] .card>h2{color:var(--gold2)}
+html[data-theme="dark"] .card>h2::before{background:linear-gradient(180deg,var(--gold),var(--gold2));box-shadow:0 0 0 2px var(--acc)}
+
+/* ---------- DROPZONE / LOADER ---------- */
+.drop{border:2px dashed var(--bd);border-radius:var(--radius-lg);padding:52px 20px;
+  text-align:center;background:linear-gradient(180deg,var(--panel2),var(--panelSoft));
+  cursor:pointer;transition:all .2s ease;position:relative}
+.drop:hover{border-color:var(--navy2);background:var(--acc2);transform:translateY(-1px)}
+.drop.hot{border-color:var(--navy2);background:var(--acc);border-style:solid;
+  box-shadow:inset 0 0 0 4px rgba(46,90,172,.08)}
+.drop .ico{width:54px;height:54px;border-radius:14px;margin:0 auto 10px;
+  background:linear-gradient(135deg,var(--navy2),var(--navy3));color:#fff;
+  display:grid;place-items:center;font-size:24px;font-weight:700;
+  box-shadow:0 8px 22px -6px rgba(46,90,172,.5);
+}
+.drop b{display:block;font-size:16px;margin-bottom:6px;color:var(--navy2);font-weight:700}
+.drop span{color:var(--mut);font-size:12.5px;line-height:1.55}
+
+/* Progress bar do carregamento */
+.progress-wrap{margin-top:16px;display:none}
+.progress-wrap.on{display:block}
+.progress-head{display:flex;justify-content:space-between;align-items:center;
+  font-size:11.5px;color:var(--mut);margin-bottom:6px;font-weight:600;letter-spacing:.3px}
+.progress-head b{color:var(--navy2);font-family:'JetBrains Mono',monospace;font-size:12px}
+.progress-bar{height:10px;background:var(--acc2);border-radius:20px;overflow:hidden;
+  border:1px solid var(--bd2);position:relative}
+.progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--navy2) 0%,var(--navy3) 50%,var(--teal) 100%);
+  width:0%;border-radius:20px;transition:width .35s cubic-bezier(.4,.0,.2,1);position:relative;
+  box-shadow:0 0 12px rgba(46,90,172,.5) inset;
+}
+.progress-bar .fill::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.35) 50%,transparent 100%);
+  animation:shimmer 1.4s linear infinite;background-size:200% 100%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.progress-step{margin-top:6px;font-size:11.5px;color:var(--txt2);line-height:1.5}
+.progress-step .dot{display:inline-block;width:7px;height:7px;background:var(--navy2);border-radius:50%;
+  margin-right:6px;animation:pulse 1.1s ease-in-out infinite;vertical-align:middle}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.4}}
+
+/* ---------- FILTROS ---------- */
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.filters-primary{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:14px;
+  padding-bottom:16px;margin-bottom:16px;border-bottom:1px dashed var(--bd)}
+@media (max-width:980px){.filters-primary{grid-template-columns:repeat(2,minmax(160px,1fr))}}
+@media (max-width:560px){.filters-primary{grid-template-columns:1fr}}
+label.f{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.9px;
+  color:var(--mut);margin-bottom:5px;font-weight:700}
+select,input[type=text],input[type=number],input[type=date]{
+  width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:var(--radius-sm);
+  background:var(--panel2);color:var(--txt);font-family:inherit;font-size:12.5px;
+  transition:border-color .15s, box-shadow .15s;
+}
+select:focus,input:focus{outline:none;border-color:var(--navy2);box-shadow:0 0 0 3px rgba(46,90,172,.15)}
+select[multiple]{height:118px}
+
+/* Custom Multi-select (dropdowns com busca e checkbox) */
+.ms{position:relative}
+.ms-btn{width:100%;padding:9px 32px 9px 11px;border:1px solid var(--bd);
+  border-radius:var(--radius-sm);background:var(--panel2);color:var(--txt);
+  font-family:inherit;font-size:12.5px;text-align:left;cursor:pointer;
+  transition:border-color .15s, box-shadow .15s;font-weight:500;
+  position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ms-btn:hover{border-color:var(--navy3)}
+.ms-btn.open{border-color:var(--navy2);box-shadow:0 0 0 3px rgba(46,90,172,.15)}
+.ms-btn::after{content:"";position:absolute;right:12px;top:50%;
+  width:8px;height:8px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);
+  transform:translateY(-70%) rotate(45deg);transition:transform .18s ease}
+.ms-btn.open::after{transform:translateY(-30%) rotate(-135deg);border-color:var(--navy2)}
+.ms-btn .count{display:inline-block;background:var(--navy2);color:#fff;
+  border-radius:20px;padding:1px 8px;font-size:10.5px;font-weight:700;margin-left:4px;
+  font-family:'JetBrains Mono',monospace}
+.ms-btn .count.zero{background:var(--acc);color:var(--navy2)}
+html[data-theme="dark"] .ms-btn .count.zero{background:var(--acc);color:var(--gold2)}
+.ms-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-sm);
+  box-shadow:var(--shadow-lg);z-index:35;display:none;
+  padding:8px;max-height:340px;
+}
+.ms.open .ms-panel{display:flex;flex-direction:column}
+.ms-search{position:relative;margin-bottom:8px}
+.ms-search input{padding-left:32px;padding-right:28px;font-size:12px}
+.ms-search::before{content:"";position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:12px;height:12px;border:1.8px solid var(--mut);border-radius:50%;pointer-events:none}
+.ms-search::after{content:"";position:absolute;left:19px;top:calc(50% + 4px);
+  width:6px;height:1.8px;background:var(--mut);transform:rotate(45deg);
+  transform-origin:left center;pointer-events:none}
+.ms-search .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:18px;height:18px;border-radius:50%;background:var(--acc);color:var(--navy2);
+  display:none;align-items:center;justify-content:center;cursor:pointer;
+  font-size:12px;font-weight:700;line-height:1;border:none;padding:0}
+.ms-search .clr.on{display:flex}
+.ms-actions{display:flex;gap:6px;padding:0 2px 8px;border-bottom:1px dashed var(--bd);margin-bottom:6px}
+.ms-actions button{flex:1;background:transparent;border:1px solid var(--bd);
+  border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;font-family:inherit;
+  color:var(--txt2);font-weight:600;transition:all .15s}
+.ms-actions button:hover{background:var(--acc2);border-color:var(--navy3);color:var(--navy2)}
+.ms-list{overflow-y:auto;flex:1;padding:0 2px;max-height:220px}
+.ms-list::-webkit-scrollbar{width:8px}
+.ms-list::-webkit-scrollbar-track{background:transparent}
+.ms-list::-webkit-scrollbar-thumb{background:var(--bd);border-radius:20px}
+.ms-list::-webkit-scrollbar-thumb:hover{background:var(--mut2)}
+.ms-opt{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:6px;
+  cursor:pointer;font-size:12.5px;transition:background .12s;user-select:none;line-height:1.35}
+.ms-opt:hover{background:var(--acc2)}
+.ms-opt input[type=checkbox]{appearance:none;-webkit-appearance:none;
+  width:16px;height:16px;border:1.8px solid var(--bd);border-radius:4px;
+  background:var(--panel);cursor:pointer;flex-shrink:0;position:relative;transition:all .12s;margin:0}
+.ms-opt input[type=checkbox]:checked{background:var(--navy2);border-color:var(--navy2)}
+.ms-opt input[type=checkbox]:checked::after{content:"";position:absolute;
+  left:4.5px;top:1px;width:4px;height:9px;border:solid #fff;border-width:0 2px 2px 0;
+  transform:rotate(45deg)}
+.ms-opt.checked{background:var(--acc2);font-weight:600;color:var(--navy2)}
+html[data-theme="dark"] .ms-opt.checked{color:var(--gold2)}
+.ms-opt .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-empty{padding:14px;text-align:center;color:var(--mut);font-size:11.5px;font-style:italic}
+.ms-foot{padding:6px 4px 0;margin-top:6px;border-top:1px dashed var(--bd);
+  font-size:10.5px;color:var(--mut);display:flex;justify-content:space-between;align-items:center}
+.ms-foot .sel{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--navy2)}
+html[data-theme="dark"] .ms-foot .sel{color:var(--gold2)}
+
+/* Card de "Data de referência" da depreciação */
+.refdate{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:12px 16px;background:linear-gradient(135deg,var(--acc2) 0%,transparent 60%);
+  border:1px dashed var(--navy3);border-radius:var(--radius-sm);margin-bottom:14px}
+.refdate .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.9px;
+  color:var(--navy2);font-weight:700;display:flex;align-items:center;gap:8px}
+.refdate .ttl::before{content:"◷";font-size:15px;color:var(--navy3)}
+html[data-theme="dark"] .refdate .ttl{color:var(--gold2)}
+html[data-theme="dark"] .refdate .ttl::before{color:var(--gold)}
+.refdate input[type=date]{max-width:180px;font-family:'JetBrains Mono',monospace;font-weight:600}
+.refdate .rst{background:transparent;border:none;color:var(--navy2);
+  font-size:11.5px;font-weight:700;cursor:pointer;text-decoration:underline;padding:4px 6px;font-family:inherit}
+.refdate .rst:hover{color:var(--navy)}
+html[data-theme="dark"] .refdate .rst{color:var(--gold2)}
+.refdate .info{font-size:11px;color:var(--mut);flex:1;min-width:200px;line-height:1.5}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;margin-bottom:20px}
+.kpi{background:var(--grad-card);border:1px solid var(--bd);border-radius:var(--radius);
+  padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+  transition:transform .18s ease, box-shadow .18s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--navy2),var(--navy3))}
+.kpi::after{content:"";position:absolute;inset:0;background:var(--grad-kpi);pointer-events:none}
+.kpi.k1::before{background:linear-gradient(180deg,var(--navy2),var(--navy3))}
+.kpi.k2::before{background:linear-gradient(180deg,var(--teal),var(--teal2))}
+.kpi.k3::before{background:linear-gradient(180deg,var(--gold),var(--gold2))}
+.kpi.k4::before{background:linear-gradient(180deg,var(--rose),var(--rose2))}
+.kpi>*{position:relative}
+.kpi .l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;line-height:1.3}
+.kpi .v{font-size:21px;font-weight:800;margin-top:6px;color:var(--navy);line-height:1.15;
+  overflow-wrap:anywhere;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.kpi .v .sm{font-size:14px;font-weight:700;display:block;letter-spacing:-.2px}
+html[data-theme="dark"] .kpi .v{color:#fff}
+.kpi .s{font-size:11px;color:var(--mut2);margin-top:4px;font-weight:500}
+
+/* ---------- HEADER ACTIONS ---------- */
+.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.import-cta{position:relative;padding:11px 18px;font-weight:800;letter-spacing:.2px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));border-color:rgba(255,255,255,.28);
+  color:#10264C;box-shadow:0 10px 24px -10px rgba(228,178,74,.7), inset 0 1px 0 rgba(255,255,255,.35)}
+.import-cta:hover{background:linear-gradient(135deg,#E8BC5D,#F3CD78);color:#0F2C5C;
+  border-color:rgba(255,255,255,.45);transform:translateY(-1px) scale(1.01)}
+.import-cta::after{content:"";position:absolute;inset:-1px;border-radius:inherit;
+  box-shadow:0 0 0 0 rgba(228,178,74,.45);animation:ctaPulse 2.4s infinite}
+@keyframes ctaPulse{0%{box-shadow:0 0 0 0 rgba(228,178,74,.45)}70%{box-shadow:0 0 0 12px rgba(228,178,74,0)}100%{box-shadow:0 0 0 0 rgba(228,178,74,0)}}
+html[data-theme="dark"] .import-cta{color:#081224;background:linear-gradient(135deg,var(--gold),#F5C96A)}
+
+/* ---------- LOADER HERO ---------- */
+.loader-shell{padding:22px 22px 20px;background:
+  linear-gradient(180deg,rgba(255,255,255,.92),rgba(251,252,254,.98)),
+  radial-gradient(900px 320px at right top,rgba(46,90,172,.06),transparent 65%);
+  overflow:hidden}
+html[data-theme="dark"] .loader-shell{background:
+  linear-gradient(180deg,rgba(17,26,44,.95),rgba(14,22,38,.98)),
+  radial-gradient(900px 320px at right top,rgba(110,155,240,.10),transparent 65%)}
+.loader-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.loader-head .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:1.25px;font-weight:800;color:var(--navy2);margin-bottom:10px}
+.loader-head .eyebrow::before{content:"";width:26px;height:2px;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+html[data-theme="dark"] .loader-head .eyebrow{color:var(--gold2)}
+.loader-head h2{margin:0 0 8px;font-size:28px;line-height:1.08;color:var(--navy);max-width:780px;text-transform:none;letter-spacing:-.9px}
+.loader-head h2::before{display:none}
+html[data-theme="dark"] .loader-head h2{color:#fff}
+.loader-head .note{max-width:800px;font-size:13px}
+.hero-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:360px}
+.hero-badge{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));border:1px solid rgba(46,90,172,.15);
+  color:var(--navy2);font-size:11px;font-weight:800;letter-spacing:.2px;box-shadow:var(--shadow-sm)}
+html[data-theme="dark"] .hero-badge{color:var(--gold2);border-color:rgba(228,178,74,.18);background:linear-gradient(135deg,var(--acc),rgba(19,32,57,.92))}
+.loader-stage{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.95fr);gap:18px;align-items:stretch}
+.hero-carousel{position:relative;min-height:440px;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.22);
+  background:#0D2147;box-shadow:0 24px 56px -26px rgba(15,44,92,.48)}
+.hero-slides,.hero-slide{height:100%}
+.hero-slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .8s ease,transform 5.8s ease;transform:scale(1.04)}
+.hero-slide.active{opacity:1;pointer-events:auto;transform:scale(1)}
+.hero-slide::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,20,43,.08) 0%,rgba(7,18,39,.25) 26%,rgba(8,18,36,.76) 100%)}
+.hero-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-overlay{position:absolute;left:24px;right:24px;bottom:24px;z-index:2;color:#fff;max-width:86%}
+.hero-kicker{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);font-size:10.5px;text-transform:uppercase;
+  letter-spacing:1px;font-weight:800;margin-bottom:12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.hero-overlay strong{display:block;font-size:28px;line-height:1.08;letter-spacing:-.8px;margin-bottom:10px;text-shadow:0 4px 18px rgba(0,0,0,.28)}
+.hero-overlay p{margin:0;font-size:13px;line-height:1.6;color:rgba(255,255,255,.88);max-width:620px}
+.hero-controls{position:absolute;left:24px;bottom:18px;z-index:3;display:flex;gap:8px}
+.hero-dot{width:11px;height:11px;border-radius:50%;border:none;padding:0;cursor:pointer;
+  background:rgba(255,255,255,.38);box-shadow:0 0 0 1px rgba(255,255,255,.14)}
+.hero-dot.active{width:30px;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.loader-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.info-card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);border:1px solid var(--bd);border-radius:18px;
+  padding:16px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;min-height:148px}
+.info-card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(46,90,172,.25),transparent)}
+.info-card h3{margin:0 0 8px;font-size:14px;line-height:1.2;color:var(--navy);letter-spacing:-.2px;position:relative;z-index:1}
+.info-card p{margin:0;color:var(--txt2);font-size:12.2px;line-height:1.65;position:relative;z-index:1}
+html[data-theme="dark"] .info-card{border-color:rgba(255,255,255,.10);box-shadow:0 0 0 1px rgba(255,255,255,.03),var(--shadow-sm)}
+html[data-theme="dark"] .info-card h3{color:#fff}
+.feature{display:flex;gap:12px}
+.feature>div{position:relative;z-index:1}
+.feature-primary{grid-column:span 2;background:linear-gradient(135deg,rgba(46,90,172,.14),rgba(46,90,172,.04) 58%,rgba(228,178,74,.12));border-color:rgba(46,90,172,.22)}
+html[data-theme="dark"] .feature-primary{background:linear-gradient(135deg,rgba(110,155,240,.16),rgba(110,155,240,.05) 58%,rgba(228,178,74,.10));border-color:rgba(110,155,240,.22)}
+.info-icon{width:42px;height:42px;display:grid;place-items:center;flex-shrink:0;border-radius:14px;font-size:20px;
+  background:linear-gradient(135deg,var(--navy2),var(--navy3));color:#fff;box-shadow:0 10px 18px -10px rgba(46,90,172,.8);position:relative;z-index:1}
+/* Fundo dos cards de estatística agora acompanha o tema (evita texto branco sobre fundo claro fixo no modo escuro) */
+.stat-card{display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(180deg,var(--panel) 0%,var(--panelSoft) 100%);border-color:rgba(46,90,172,.20)}
+.stat-card.accent-teal{background:linear-gradient(180deg,var(--panel) 0%,var(--panelSoft) 100%);border-color:rgba(15,153,144,.32)}
+html[data-theme="dark"] .stat-card{border-color:rgba(110,155,240,.22)}
+html[data-theme="dark"] .stat-card.accent-teal{border-color:rgba(72,201,192,.30)}
+.stat-value{font-size:32px;font-weight:800;line-height:1;color:var(--navy);letter-spacing:-1px;margin-bottom:8px;position:relative;z-index:1}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:800;color:var(--mut);margin-bottom:6px;position:relative;z-index:1}
+.stat-card p{position:relative;z-index:1}
+html[data-theme="dark"] .stat-value{color:#fff}
+html[data-theme="dark"] .stat-label{color:var(--txt2)}
+.quote-card{grid-column:span 2;display:flex;align-items:flex-end;min-height:120px;background:linear-gradient(135deg,rgba(15,44,92,.96),rgba(46,90,172,.92));color:#fff;border-color:rgba(255,255,255,.14)}
+.quote-card::before{background:linear-gradient(90deg,transparent,rgba(255,255,255,.24),transparent)}
+.quote-card p{color:rgba(255,255,255,.92);font-size:13px;max-width:90%;position:relative;z-index:1}
+.quote-mark{position:absolute;right:14px;top:-12px;font-size:82px;line-height:1;color:rgba(255,255,255,.14);font-family:Georgia,serif}
+.checklist-card ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:8px;position:relative;z-index:1}
+.checklist-card li{position:relative;padding-left:18px;font-size:12px;color:var(--txt2);line-height:1.5}
+.checklist-card li::before{content:"✓";position:absolute;left:0;top:0;color:var(--teal);font-weight:900}
+html[data-theme="dark"] .checklist-card li::before{color:var(--teal2)}
+/* Ícones alusivos ao tema (laboratório/gestão), como marca d'água discreta em cada card */
+.card-motif{position:absolute;right:-8px;bottom:-8px;width:88px;height:88px;opacity:.09;color:var(--navy2);pointer-events:none;z-index:0}
+.card-motif path,.card-motif circle,.card-motif rect,.card-motif line,.card-motif polyline{vector-effect:non-scaling-stroke}
+html[data-theme="dark"] .card-motif{opacity:.13;color:var(--navy3)}
+.quote-card .card-motif{color:#fff;opacity:.10}
+html[data-theme="dark"] .quote-card .card-motif{opacity:.14}
+.stat-card.accent-teal .card-motif{color:var(--teal)}
+.checklist-card .card-motif{color:var(--gold)}
+html[data-theme="dark"] .checklist-card .card-motif{color:var(--gold2)}
+
+@media(max-width:1180px){
+  .loader-stage{grid-template-columns:1fr}
+  .hero-carousel{min-height:380px}
+}
+@media(max-width:780px){
+  .loader-shell{padding:18px}
+  .header-actions{width:100%;justify-content:flex-start}
+  .loader-head h2{font-size:23px}
+  .hero-overlay{left:18px;right:18px;bottom:22px;max-width:none}
+  .hero-overlay strong{font-size:22px}
+  .loader-info-grid{grid-template-columns:1fr}
+  .feature-primary,.quote-card{grid-column:span 1}
+}
+@media(max-width:560px){
+  header{padding:16px 18px}
+  main{padding:18px 18px 48px}
+  .header-actions .btn{flex:1;justify-content:center}
+  .hero-carousel{min-height:330px}
+  .hero-badges{justify-content:flex-start}
+}
+
+/* ---------- CHART ---------- */
+.grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:18px}
+@media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+.chartbox{position:relative;height:308px}
+
+/* ---------- TABLES ---------- */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:11.8px}
+th{background:linear-gradient(180deg,var(--navy) 0%,#0B234A 100%);color:#fff;
+  padding:10px 8px;text-align:center;font-weight:700;position:sticky;top:0;z-index:2;
+  border-bottom:2px solid var(--navy2);font-size:11px;letter-spacing:.3px;
+  text-transform:uppercase}
+html[data-theme="dark"] th{background:linear-gradient(180deg,#152341 0%,#0E1A34 100%);border-bottom-color:var(--navy2)}
+td{padding:7px 8px;border-bottom:1px solid var(--bd2);border-right:1px solid var(--bd2)}
+td:last-child{border-right:none}
+tbody tr:nth-child(even){background:var(--row)}
+tbody tr:hover{background:var(--acc);transition:background .1s}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace;font-size:11.5px}
+.ctr{text-align:center}
+.scroll{max-height:560px;overflow:auto;border:1px solid var(--bd);border-radius:var(--radius-sm);
+  background:var(--panel);position:relative}
+.scroll::-webkit-scrollbar{width:10px;height:10px}
+.scroll::-webkit-scrollbar-track{background:var(--panel2)}
+.scroll::-webkit-scrollbar-thumb{background:var(--bd);border-radius:20px;border:2px solid var(--panel2)}
+.scroll::-webkit-scrollbar-thumb:hover{background:var(--mut2)}
+tfoot td{background:var(--acc);font-weight:700;position:sticky;bottom:0;
+  border-top:2px solid var(--navy2)}
+.tot{background:var(--acc);font-weight:700}
+html[data-theme="dark"] tfoot td,html[data-theme="dark"] .tot{background:#1E2C48}
+th.sortable{cursor:pointer;user-select:none;transition:background .15s}
+th.sortable:hover{background:linear-gradient(180deg,#153367 0%,#0E2A5A 100%)}
+.note{font-size:11.5px;color:var(--mut);line-height:1.65}
+.hidden{display:none !important}
+.rowbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.chip{display:inline-flex;align-items:center;background:linear-gradient(135deg,var(--acc),var(--acc2));
+  color:var(--navy2);border-radius:20px;padding:3px 10px;font-size:10.5px;font-weight:700;
+  border:1px solid rgba(46,90,172,.2);letter-spacing:.2px}
+html[data-theme="dark"] .chip{color:var(--gold2);border-color:rgba(228,178,74,.3)}
+.chip.warn{background:linear-gradient(135deg,rgba(229,138,0,.15),rgba(229,138,0,.04));
+  color:var(--warn);border-color:rgba(229,138,0,.3)}
+
+/* Aviso da busca soberana */
+#avisoBusca{padding:10px 14px;border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,rgba(228,178,74,.14),rgba(228,178,74,.03));
+  border:1px solid rgba(228,178,74,.3);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* Animations */
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Print reset for buttons */
+@media print{.rowbtns,.btn,header .btn{display:none}}
+
+/* ---------- SEÇÃO RETRÁTIL (Relação de equipamentos) ---------- */
+h2.collapsible{cursor:pointer;user-select:none}
+.collapse-ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  width:20px;height:20px;border-radius:6px;font-size:10px;color:#fff;
+  background:linear-gradient(135deg,var(--navy2),var(--navy3));
+  box-shadow:0 0 0 2px var(--acc2),0 2px 6px -2px rgba(15,44,92,.5);
+  transition:transform .25s ease,box-shadow .18s ease;margin-right:1px}
+.collapse-ico.open{transform:rotate(90deg)}
+h2.collapsible:hover .collapse-ico{box-shadow:0 0 0 3px var(--acc),0 4px 12px -2px rgba(15,44,92,.55)}
+html[data-theme="dark"] .collapse-ico{background:linear-gradient(135deg,var(--gold),var(--gold2));box-shadow:0 0 0 2px var(--acc)}
+html[data-theme="dark"] h2.collapsible:hover .collapse-ico{box-shadow:0 0 0 3px rgba(228,178,74,.35),0 4px 12px -2px rgba(228,178,74,.5)}
+.collapse-hint{font-weight:400;text-transform:none;letter-spacing:0;font-size:10.5px;color:var(--mut);margin-left:auto}
+
+/* ---------- MODAL — MÉTRICAS DE DEPRECIAÇÃO ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(6,11,20,.6);backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;
+  z-index:200;padding:20px}
+.modal-overlay.hidden{display:none}
+.modal-box{background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);width:100%;max-width:1220px;max-height:92vh;
+  display:flex;flex-direction:column;overflow:hidden;animation:fadeIn .22s ease}
+.modal-head{display:flex;align-items:center;gap:14px;padding:18px 22px;
+  background:var(--grad-hero);color:#fff;position:relative}
+.modal-head::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(500px 180px at 10% 130%,rgba(255,255,255,.10),transparent 70%),
+  radial-gradient(420px 180px at 95% -30%,rgba(228,178,74,.16),transparent 70%);pointer-events:none;
+  border-radius:inherit}
+.modal-head>*{position:relative}
+.modal-head .ico{width:42px;height:42px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.08));
+  border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;
+  font-size:19px;line-height:1;overflow:visible}
+.modal-head .tt{flex:1;min-width:0}
+.modal-head h2{margin:0;font-size:15.5px;font-weight:700;letter-spacing:.2px;line-height:1.3}
+.modal-head .sub{font-size:11px;opacity:.85;margin-top:3px;line-height:1.5}
+.modal-close{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;
+  width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:15px;line-height:1;
+  display:flex;align-items:center;justify-content:center;overflow:visible;
+  transition:all .15s;flex-shrink:0}
+.modal-close:hover{background:rgba(255,255,255,.3);transform:rotate(90deg)}
+.modal-body{padding:20px 22px;overflow:auto;flex:1;background:var(--bg2)}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end;align-items:center;padding:14px 22px;
+  border-top:1px solid var(--bd);background:var(--panel2);flex-wrap:wrap}
+.modal-foot .note{margin-right:auto;font-size:11px}
+
+.dep-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:11px;margin-bottom:20px}
+.dep-kpi{background:var(--grad-card);border:1px solid var(--bd);border-radius:var(--radius);
+  padding:12px 14px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm)}
+.dep-kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--navy2),var(--teal))}
+.dep-kpi.k2::before{background:linear-gradient(180deg,var(--gold),var(--gold2))}
+.dep-kpi.k3::before{background:linear-gradient(180deg,var(--rose),var(--rose2))}
+.dep-kpi .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700}
+.dep-kpi .v{font-size:17.5px;font-weight:800;color:var(--navy);margin-top:5px;letter-spacing:-.3px}
+html[data-theme="dark"] .dep-kpi .v{color:#fff}
+.dep-kpi .s{font-size:10.5px;color:var(--mut2);margin-top:3px}
+
+.dep-tabs{display:flex;gap:18px;border-bottom:1px solid var(--bd);margin-bottom:16px}
+.dep-tab{background:none;border:none;padding:9px 2px;font-size:12.5px;font-weight:700;color:var(--mut);
+  cursor:pointer;border-bottom:2.5px solid transparent;font-family:inherit;transition:color .15s}
+.dep-tab:hover{color:var(--navy2)}
+.dep-tab.active{color:var(--navy2);border-bottom-color:var(--navy2)}
+html[data-theme="dark"] .dep-tab.active{color:var(--gold2);border-bottom-color:var(--gold2)}
+html[data-theme="dark"] .dep-tab:hover{color:var(--gold2)}
+
+.dep-group{margin-bottom:12px;border:1px solid var(--bd);border-radius:var(--radius-sm);overflow:hidden;background:var(--panel)}
+.dep-group summary{list-style:none;cursor:pointer;padding:10px 14px;background:var(--panelSoft);
+  display:flex;align-items:center;gap:10px;font-weight:700;font-size:12px;color:var(--navy2)}
+html[data-theme="dark"] .dep-group summary{color:var(--gold2)}
+.dep-group summary::-webkit-details-marker{display:none}
+.dep-group summary .arrow{display:inline-block;transition:transform .2s;font-size:10px;color:var(--mut)}
+.dep-group[open] summary .arrow{transform:rotate(90deg)}
+.dep-group table{font-size:11.2px}
+.dep-empty{padding:20px;text-align:center;color:var(--mut);font-size:12px}
+
+/* ---------- Módulo: Impostos vs Depreciação (IRPJ/CSLL/PIS/COFINS) ---------- */
+.btn.tax-highlight{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#3A2600;
+  border-color:rgba(255,255,255,.3);font-weight:800;letter-spacing:.15px;
+  box-shadow:0 10px 22px -10px rgba(200,149,43,.65), inset 0 1px 0 rgba(255,255,255,.35)}
+.btn.tax-highlight:hover{background:linear-gradient(135deg,#D6A23A,#F0C766);color:#3A2600;
+  border-color:rgba(255,255,255,.5);transform:translateY(-1px) scale(1.01)}
+html[data-theme="dark"] .btn.tax-highlight{color:#2E1F00}
+.tax-disclaimer{background:var(--panelSoft);border:1px solid var(--bd);border-left:3px solid var(--gold);
+  border-radius:var(--radius-sm);padding:10px 13px;font-size:11px;color:var(--mut);line-height:1.55;margin-bottom:16px}
+.tax-disclaimer b{color:var(--txt2)}
+.tax-sec{margin-bottom:20px}
+.tax-sec>h3{font-size:11px;margin:0 0 12px;color:var(--navy2);text-transform:uppercase;
+  letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:8px}
+html[data-theme="dark"] .tax-sec>h3{color:var(--gold2)}
+.tax-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px}
+.tax-grid .full{grid-column:1/-1}
+.tax-grid label.f{display:block}
+.tax-radio{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:8px 0}
+.tax-radio label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--txt2);cursor:pointer}
+.tax-radio input{accent-color:var(--navy2)}
+.tax-auto{font-size:10.5px;color:var(--teal);margin-top:4px;display:flex;align-items:center;gap:5px}
+.tax-auto::before{content:"⟳"}
+.tax-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:11px;margin:6px 0 22px}
+.tax-kpi{background:var(--grad-card);border:1px solid var(--bd);border-radius:var(--radius);
+  padding:13px 14px;position:relative;overflow:hidden}
+.tax-kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--gold),var(--gold2))}
+.tax-kpi.pos::before{background:linear-gradient(180deg,var(--success),#3FD98A)}
+.tax-kpi .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700}
+.tax-kpi .v{font-size:17.5px;font-weight:800;color:var(--navy);margin-top:5px;letter-spacing:-.3px}
+html[data-theme="dark"] .tax-kpi .v{color:#fff}
+.tax-kpi.pos .v{color:var(--success)}
+.tax-kpi .s{font-size:10.5px;color:var(--mut2);margin-top:3px}
+.tax-calc-btn{margin:4px 0 18px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">GL</div>
+  <div>
+    <h1>GRUPO LABMEDIC – Dashboard de equipamentos adquiridos</h1>
+    <div class="sub">Importe a planilha de equipamentos adquiridos (ou a base bruta de NF de entrada) — processamento 100% local</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="header-actions">
+    <button class="btn primary import-cta" id="importBtn">⇪ Importar planilha</button>
+    <button class="btn" id="reload">↻ Trocar planilha</button>
+    <button class="btn" id="theme">☾ Tema escuro</button>
+  </div>
+  <input type="file" id="file" accept=".xlsx,.xls" class="hidden">
+</header>
+
+<main>
+  <section id="loader" class="card loader-shell fade-in">
+    <div class="loader-head">
+      <div>
+        <span class="eyebrow">Entrada de dados</span>
+        <h2>A base local oferece segurança singular e monitorada</h2>
+        <p class="note">O botão <b>Importar planilha</b>, no topo, permite acessar a planilha para processamento imediato. O contexto hospitalar e laboratorial é o ambiente da aplicação.</p>
+      </div>
+      <div class="hero-badges">
+        <span class="hero-badge">Processamento local, mais seguro</span>
+        <span class="hero-badge">Leitura automática</span>
+        <span class="hero-badge">Análise de depreciação patrimonial</span>
+      </div>
+    </div>
+
+    <div class="loader-stage">
+      <div class="hero-carousel" id="heroCarousel" aria-label="Carrossel de imagens alusivo ao ambiente laboratorial">
+        <div class="hero-slides">
+          <article class="hero-slide active">
+            <img src="https://sspark.genspark.ai/cfimages?u1=uAXIUNifyZfUjc9pjQXJmdaF%2BxJD8PiRD5hF66UxrBnPBCZP2qtvwIx8xFQ%2FUiBMa2dcjsMtLiO34pvgsLkQcwadGtqgccuoYcr7KLUkqz04BFt29Qp9dBJ%2BDmKSN6l2ARWrKORJxAiitNvx&u2=oQuvb7NGNFQ65rkA&width=2560" alt="Equipamentos laboratoriais organizados em bancada clínica">
+            <div class="hero-overlay">
+              <span class="hero-kicker">Visão do parque</span>
+              <strong>Equipamentos importantes, aquisições e expansão operacional em um único painel.</strong>
+              <p>Leitura visual forte e foco em gestão patrimonial</p>
+            </div>
+          </article>
+          <article class="hero-slide">
+            <img src="https://sspark.genspark.ai/cfimages?u1=EkeTrTKXJAs6oSbr78z2VXPVazhzIz1onvM0vKp%2FZxX%2B7eho6Pw%2F4wF6xVC7btoZMp5aTGf3tl2w4HCX2fle0p5iHJf9yfe3Wgamhb2e%2BZd8IwCib4S5xFoWfTkR4VIay8gkDAv6wIX6Zt3u&u2=XG7pmvUNl0vMj9CN&width=2560" alt="Equipamentos de laboratório em ambiente hospitalar e clínico">
+            <div class="hero-overlay">
+              <span class="hero-kicker">Ambiente assistencial</span>
+              <strong>Contexto visual alinhado a análises clínicas, diagnóstico e infraestrutura biomédica.</strong>
+              <p>O dashboard oferece visão ocompleta da depreciação dos equipamentos</p>
+            </div>
+          </article>
+          <article class="hero-slide">
+            <img src="https://sspark.genspark.ai/cfimages?u1=QVKf17UazsNf%2FFiRckw21Vai%2BiYSJq5GH6yuPJnTKa2MEW9QMoK14MpixXL0lXw3zpbVxcSPVHAzFQSkPG4%2Bs2%2B3i%2B2sygZbpoHzq7TRrUA7OFCvO0v24j7FM%2FsxGaq8pZIpwLJVGbE%3D&u2=kYh%2F%2FvkAEvtHX%2BYF&width=2560" alt="Instrumentação clínica e equipamentos de análises laboratoriais">
+            <div class="hero-overlay">
+              <span class="hero-kicker">Precisão e rastreabilidade por filtros</span>
+              <strong>Dados de aquisição, depreciação e exportação executiva com apresentação premium.</strong>
+              <p>Visão administrativa e contábil do parque de equipamentos.</p>
+            </div>
+          </article>
+        </div>
+        <div class="hero-controls" id="heroDots" aria-label="Navegação do carrossel">
+          <button type="button" class="hero-dot active" data-slide="0" aria-label="Slide 1"></button>
+          <button type="button" class="hero-dot" data-slide="1" aria-label="Slide 2"></button>
+          <button type="button" class="hero-dot" data-slide="2" aria-label="Slide 3"></button>
+        </div>
+      </div>
+
+      <div class="loader-info-grid">
+        <article class="info-card feature feature-primary">
+          <span class="info-icon">⬆</span>
+          <div>
+            <h3>Depreciação contábil em destaque</h3>
+            <p>Cálculo linear automático do valor atual do parque de equipamentos, item a item.</p>
+          </div>
+          <svg class="card-motif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 20h18"/><path d="M6 20V11"/><path d="M11 20V6"/><path d="M16 20v-8"/><path d="M21 20V4"/><path d="m4 10 5-5 4 3 6-6"/>
+          </svg>
+        </article>
+        <article class="info-card feature">
+          <span class="info-icon">⚙</span>
+          <div>
+            <h3>Leitura rápida e inteligente</h3>
+            <p>Compatível com planilha tratada, preservando o fluxo original do sistema.</p>
+          </div>
+          <svg class="card-motif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="3" width="13" height="18" rx="2"/><path d="M8 8h5"/><path d="M8 12h5"/><path d="M8 16h3"/><circle cx="18" cy="18" r="3.4"/><path d="m21 21-1.6-1.6"/>
+          </svg>
+        </article>
+        <article class="info-card stat-card">
+          <div class="stat-value">100%</div>
+          <div class="stat-label">Processamento local do arquivo:</div>
+          <p>Nenhum envio da planilha para servidores externos durante a leitura!</p>
+          <svg class="card-motif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3 4 6v6c0 5 3.4 8.4 8 9 4.6-.6 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/>
+          </svg>
+        </article>
+        <article class="info-card stat-card accent-teal">
+          <div class="stat-value">360°</div>
+          <div class="stat-label">Visão gerencial dos investimentos</div>
+          <p>KPIs, séries temporais, ranking de fornecedores e métricas de depreciação.</p>
+          <svg class="card-motif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.6"/><path d="m12 3 0 3M12 18v3M3 12h3M18 12h3"/>
+          </svg>
+        </article>
+        <article class="info-card quote-card">
+          <span class="quote-mark">Análise</span>
+          <p>LEITURA OBJETIVA DA DEPRECIAÇÃO PATRIMONIAL CONTÁBIL</p>
+          <svg class="card-motif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 3v6l-3 3v9h12v-9l-3-3V3"/><path d="M7 3h10"/><path d="M9.5 13h5"/>
+          </svg>
+        </article>
+        <article class="info-card checklist-card">
+          <h3>Benefícios desta Aplicação:</h3>
+          <ul>
+            <li>Contexto empresarial</li>
+            <li>Conteúdo focado no aspecto gerencial</li>
+            <li>Fácil comparação com balanços patrimoniais</li>
+          </ul>
+          <svg class="card-motif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3h6v3H9z"/><path d="m8.5 12 2 2 4-4.5"/>
+          </svg>
+        </article>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progWrap">
+      <div class="progress-head">
+        <span id="progLabel">Preparando importação…</span>
+        <b id="progPct">0%</b>
+      </div>
+      <div class="progress-bar"><div class="fill" id="progFill"></div></div>
+      <div class="progress-step" id="progStep"><span class="dot"></span><span id="progStepText">Aguardando arquivo…</span></div>
+    </div>
+    <p class="note" id="status"></p>
+  </section>
+
+  <div id="app" class="hidden">
+    <section class="card">
+      <h2>Filtros</h2>
+
+      <div class="refdate">
+        <div class="ttl">Data de referência para depreciação</div>
+        <input type="date" id="fRef">
+        <button class="rst" id="rstRef" title="Voltar para hoje">usar data do sistema</button>
+        <div class="info">A depreciação acumulada e o valor atual do parque são recalculados nesta data (linear, vida útil de 10 anos).</div>
+      </div>
+
+      <div class="filters filters-primary">
+        <div><label class="f">Ano</label><select id="fAno" multiple></select></div>
+        <div><label class="f">Mês</label><select id="fMes" multiple></select></div>
+        <div><label class="f">CFOP</label><select id="fCfop" multiple></select></div>
+        <div id="boxEmp" class="hidden"><label class="f">Empresa adquirente dos equipamentos</label><select id="fEmp" multiple></select></div>
+      </div>
+
+      <div class="filters">
+        <div><label class="f">Fornecedor</label><div class="ms" data-target="fForn"></div></div>
+        <div><label class="f">Equipamento / Modelo</label><div class="ms" data-target="fMod"></div></div>
+        <div><label class="f">Família</label><div class="ms" data-target="fFam"></div></div>
+        <div>
+          <label class="f">Busca inteligente (soberana)</label>
+          <input type="text" id="fBusca" placeholder="equipamento, NF, código, fornecedor...">
+          <label class="f" style="margin-top:10px">Valor total mínimo (R$)</label>
+          <input type="number" id="fMin" value="0" min="0" step="500">
+          <div class="note" style="margin-top:6px">Cada filtro aceita <b>um ou mais</b> valores — ou “(Todos)”.</div>
+        </div>
+      </div>
+
+      <!-- os selects abaixo são invisíveis e servem apenas para preservar toda a lógica original -->
+      <select id="fForn" multiple class="hidden"></select>
+      <select id="fMod" multiple class="hidden"></select>
+      <select id="fFam" multiple class="hidden"></select>
+
+      <div class="rowbtns">
+        <button class="btn" id="clear">✕ Limpar filtros</button>
+        <button class="btn" id="csv">⇩ Exportar seleção (CSV)</button>
+        <button class="btn" id="xls">⇩ Exportar seleção (Excel)</button>
+        <button class="btn primary" id="print">⎙ Gerar PDF (A4 horizontal)</button>
+        <button class="btn dep-highlight" id="btnDep">📉 Métricas de depreciação</button>
+        <button class="btn tax-highlight" id="btnTax">🧮 Impostos vs Depreciação</button>
+        <span class="note" id="resumoFiltro"></span>
+      </div>
+      <div id="avisoBusca" class="hidden" style="margin-top:12px">
+        <span class="chip warn">BUSCA SOBERANA ATIVA</span>
+        <span class="note">a busca sobrepõe os filtros: os registros relevantes são reunidos em toda a base, independentemente das seleções acima. Limpe o campo de busca para voltar aos filtros.</span>
+      </div>
+    </section>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid2">
+      <section class="card"><h2>Investimento por ano (R$)</h2><div class="chartbox"><canvas id="cAno"></canvas></div></section>
+      <section class="card"><h2>Top 8 fornecedores (R$)</h2><div class="chartbox"><canvas id="cForn"></canvas></div></section>
+    </div>
+    <div class="grid2">
+      <section class="card"><h2>Depreciação acumulada por família de equipamento (R$)</h2><div class="chartbox"><canvas id="cMes"></canvas></div></section>
+      <section class="card"><h2>Participação por fornecedor</h2><div class="chartbox"><canvas id="cPie"></canvas></div></section>
+    </div>
+    <div class="grid2">
+      <section class="card"><h2>Top 10 modelos de equipamento (R$)</h2><div class="chartbox"><canvas id="cMod"></canvas></div></section>
+      <section class="card"><h2>Sazonalidade — investimento por mês (R$)</h2><div class="chartbox"><canvas id="cSaz"></canvas></div></section>
+    </div>
+
+    <section class="card">
+      <h2>Resumo por ano / mês de aquisição</h2>
+      <div class="scroll" style="max-height:360px"><table id="tResumo"></table></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card"><h2>Resumo por fornecedor</h2><div class="scroll" style="max-height:360px"><table id="tForn"></table></div></section>
+      <section class="card"><h2>Resumo por modelo</h2><div class="scroll" style="max-height:360px"><table id="tMod"></table></div></section>
+    </div>
+
+    <section class="card">
+      <h2 class="collapsible" id="hdrEq" title="Clique para recolher/expandir">
+        <span class="collapse-ico" id="icoEq">▸</span>Relação de equipamentos adquiridos <span class="chip" id="chipQtd"></span>
+        <span class="collapse-hint" id="hintEq">clique para expandir</span>
+      </h2>
+      <div class="scroll hidden" id="scrollEq"><table id="tEq"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Critério de seleção aplicado</h2>
+      <p class="note" id="criterio"></p>
+    </section>
+  </div>
+</main>
+
+<div class="modal-overlay hidden" id="modalDep">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="ico">📉</div>
+      <div class="tt">
+        <h2>Métricas de depreciação dos equipamentos</h2>
+        <div class="sub" id="modalDepSub">Depreciação linear (vida útil de 10 anos) sobre a seleção atual de filtros</div>
+      </div>
+      <button class="modal-close" id="modalDepClose" title="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="dep-kpis" id="depKpis"></div>
+      <div class="dep-tabs">
+        <button class="dep-tab active" type="button" data-tab="periodo">📅 Por período (mensal / anual)</button>
+        <button class="dep-tab" type="button" data-tab="empresa">🏢 Por empresa adquirente</button>
+      </div>
+      <div id="depPanelPeriodo"></div>
+      <div id="depPanelEmpresa" class="hidden"></div>
+    </div>
+    <div class="modal-foot">
+      <span class="note" id="depFootNote"></span>
+      <button class="btn" id="depXls">⇩ Exportar planilha profissional (Excel)</button>
+      <button class="btn primary" id="depPdf">⎙ Visualizar relatório PDF (A4 horizontal)</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalTax">
+  <div class="modal-box" style="max-width:980px">
+    <div class="modal-head">
+      <div class="ico">🧮</div>
+      <div class="tt">
+        <h2>Cálculo de impostos vs. depreciação — memória de cálculo</h2>
+        <div class="sub" id="modalTaxSub">IRPJ, CSLL, PIS e COFINS — regime de lucro real</div>
+      </div>
+      <button class="modal-close" id="modalTaxClose" title="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tax-disclaimer">
+        <b>Modelo demonstrativo de apoio gerencial.</b> Os cálculos abaixo replicam a lógica geral do lucro real
+        (IRPJ 15% + adicional de 10%, CSLL 9%, PIS/COFINS sobre a receita) aplicada à depreciação do parque de
+        equipamentos já apurada neste dashboard. Ele <b>não substitui</b> a apuração oficial feita pela contabilidade
+        da empresa, que deve considerar todos os demais ajustes do LALUR/LACS, regime específico de PIS/COFINS
+        contratado, eventuais exclusões/adições fiscais e a documentação de suporte (notas fiscais, contratos de
+        comodato/locação, laudos etc.). Consulte sempre o contador e/ou advogado tributário responsável antes de
+        tomar decisões com base neste demonstrativo.
+      </div>
+
+      <div class="tax-sec">
+        <h3>① Período de apuração</h3>
+        <div class="tax-radio">
+          <label><input type="radio" name="txRegime" value="trimestral" checked> Lucro real trimestral</label>
+          <label><input type="radio" name="txRegime" value="anual"> Lucro real anual (estimativa/balanço anual)</label>
+        </div>
+        <div class="tax-grid">
+          <div><label class="f">Ano de apuração</label><select id="txAno"></select></div>
+          <div id="boxTrimestre"><label class="f">Trimestre</label>
+            <select id="txTrimestre">
+              <option value="1">1º trimestre (Jan–Mar)</option>
+              <option value="2">2º trimestre (Abr–Jun)</option>
+              <option value="3">3º trimestre (Jul–Set)</option>
+              <option value="4">4º trimestre (Out–Dez)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="tax-sec">
+        <h3>② Depreciação dedutível do período (apurada a partir do parque de equipamentos)</h3>
+        <div class="tax-grid">
+          <div>
+            <label class="f">Depreciação do período (R$)</label>
+            <input type="number" id="txDep" step="0.01" min="0">
+            <div class="tax-auto" id="txDepAuto"></div>
+          </div>
+          <div>
+            <label class="f">% dedutível considerado (nexo com a atividade-fim)</label>
+            <input type="number" id="txPctDed" value="100" min="0" max="100" step="1">
+            <div class="note" style="margin-top:4px">Ajuste para excluir itens sem nexo com a atividade-fim (uso alheio à operação), conforme critério contábil da empresa. Comodato/locação usuais e necessários à atividade costumam manter 100%.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tax-sec">
+        <h3>③ Premissas contábeis do período (informar manualmente)</h3>
+        <div class="tax-grid">
+          <div><label class="f">Lucro contábil antes de IRPJ/CSLL (R$)</label><input type="number" id="txLucro" step="0.01" min="0" placeholder="ex.: 1200000"></div>
+          <div><label class="f">Alíquota IRPJ</label><input type="number" id="txAliqIrpj" value="15" step="0.01"> %</div>
+          <div><label class="f">Alíquota adicional IRPJ</label><input type="number" id="txAliqAdic" value="10" step="0.01"> %</div>
+          <div><label class="f">Limite do adicional no período (R$)</label><input type="number" id="txLimAdic" step="0.01"></div>
+          <div><label class="f">Alíquota CSLL</label><input type="number" id="txAliqCsll" value="9" step="0.01"> %</div>
+        </div>
+      </div>
+
+      <div class="tax-sec">
+        <h3>④ PIS/COFINS sobre a receita do período</h3>
+        <div class="tax-grid">
+          <div class="full tax-radio">
+            <label><input type="radio" name="txPisReg" value="nc" checked> Regime não cumulativo (1,65% / 7,60%)</label>
+            <label><input type="radio" name="txPisReg" value="cum"> Regime cumulativo (0,65% / 3,00%)</label>
+          </div>
+          <div><label class="f">Receita bruta tributável no período (R$)</label><input type="number" id="txReceitaPC" step="0.01" min="0" placeholder="ex.: 6000000"></div>
+          <div><label class="f">Alíquota PIS</label><input type="number" id="txAliqPis" value="1.65" step="0.01"> %</div>
+          <div><label class="f">Alíquota COFINS</label><input type="number" id="txAliqCofins" value="7.6" step="0.01"> %</div>
+          <div><label class="f">Crédito de PIS/COFINS sobre imobilizado no período (R$)</label><input type="number" id="txCredito" value="0" step="0.01" min="0">
+            <div class="note" style="margin-top:4px">Informe apenas se a empresa apurar crédito sobre bens do ativo imobilizado conforme as hipóteses legais do regime não cumulativo (Leis 10.637/2002 e 10.833/2003).</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tax-calc-btn"><button class="btn primary" id="txCalcBtn">🧮 Calcular</button></div>
+
+      <div id="txResultado" class="hidden">
+        <div class="tax-kpis" id="txKpis"></div>
+
+        <div class="tax-sec">
+          <h3>Comparativo de IRPJ/CSLL — com e sem a depreciação dedutível</h3>
+          <div class="scroll"><table id="txTabIrpj"></table></div>
+        </div>
+
+        <div class="tax-sec">
+          <h3>PIS/COFINS sobre a receita do período</h3>
+          <div class="scroll"><table id="txTabPc"></table></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="note" id="txFootNote">Preencha as premissas e clique em "Calcular".</span>
+      <button class="btn" id="txXls" disabled>⇩ Exportar memória de cálculo (Excel)</button>
+      <button class="btn primary" id="txPdf" disabled>⎙ Visualizar memória de cálculo (PDF)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MES=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const BUY=new Set(['6551','5551','1551','2551','6556','6101','6102','5101','5102','6108','6106','6403','6401','1101','1102','2101','2102','6113','6404']);
+const EXCL=['ELETRODO','COLUNA','PCB','PARTES','PECAS'];
+const brl=v=>(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const brl0=v=>(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const pct=v=>(v||0).toFixed(1).replace('.',',')+'%';
+const int=v=>(v||0).toLocaleString('pt-BR');
+const dt=d=>d?String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear():'';
+const up=s=>String(s||'').toUpperCase();
+const $=id=>document.getElementById(id);
+let ALL=[],VIEW=[],charts={},sort={k:'dtemi',dir:1},CRIT='',SRC='',BUSCA=false;
+
+/* Depreciação linear — vida útil 10 anos (120 meses), sem valor residual (IN RFB 1.700/2017, Anexo III).
+   A data de referência é editável pelo usuário via campo #fRef (padrão = data do sistema). */
+const VIDA_MESES=120;
+let REF=new Date(); REF.setHours(0,0,0,0);
+function meses(a,b){ return (b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth())+(b.getDate()>=a.getDate()?0:-1); }
+function depreciar(x){ const base=x.dtemi||x.dtent; if(!base||!(x.vt>0)) return {ok:false,dep:null,atual:null,m:null};
+  const m=Math.max(0,Math.min(VIDA_MESES,meses(base,REF))); const dep=x.vt*m/VIDA_MESES; return {ok:true,dep,atual:x.vt-dep,m}; }
+const nd=v=>v==null?'N/D':brl(v);
+function recalcDepreciacao(){ ALL.forEach(r=>{const p=depreciar(r);r.dep=p.dep;r.atual=p.atual;r.depMeses=p.m;}); }
+
+function toDate(v){ if(v instanceof Date) return v; if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v); return d?new Date(d.y,d.m-1,d.d):null;}
+ if(typeof v==='string'){const m=v.match(/(\d{4})-(\d{2})-(\d{2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);const b=v.match(/(\d{2})\/(\d{2})\/(\d{4})/);if(b)return new Date(+b[3],+b[2]-1,+b[1]);} return null; }
+function num(v){ if(typeof v==='number')return v; if(v==null||v==='')return 0; return parseFloat(String(v).replace(/[R$\s]/g,'').replace(/\.(?=\d{3}\b)/g,'').replace(',','.'))||0; }
+function serieOf(s){ const m=/(?:#?\s?N\s?[S\/]\s?[.:]?\s*)([A-Za-z0-9\-\/]{4,})/i.exec(s); if(!m)return '';
+ let v=m[1]; const rest=s.slice(m.index+m[0].length); const v2=(rest.slice(0,30).match(/[A-Za-z0-9\-]{4,}/g)||[]);
+ if(v2.length && /^\d{6,}$/.test(v2[0]) && rest.slice(0,3).includes('/')) v+=' / '+v2[0];
+ return v.replace(/^[\s.\-]+|[\s.\-]+$/g,''); }
+function nomeOf(prod,serie){ if(!serie) return prod.trim();
+ const base=serie.split(' / ')[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ return prod.replace(new RegExp('\\s*#?\\s?N\\s?[S\\/]\\s?[.:]?\\s*'+base+'.*$','i'),'').replace(/^[\s.\-]+|[\s.\-]+$/g,''); }
+
+/* ---------- CANONICALIZAÇÃO DO NOME DO EQUIPAMENTO ----------
+   Dissocia o NOME do equipamento de complementos que impedem a unificação
+   (lote, número de série, validade, fabricação, lacre, referência avulsa,
+   datas soltas, códigos isolados etc.). Mantém a identidade do produto
+   para agrupamento em filtros, gráficos e tabelas resumo, sem descaracterizar
+   a coluna Equipamento da relação analítica (para essa, guarda-se x.nomeOrig).
+*/
+function canonNome(raw){
+  if(raw==null) return '';
+  let s=String(raw).replace(/\s+/g,' ').trim();
+  if(!s) return '';
+  /* Estratégia conservadora: corta o nome APENAS a partir de um rótulo
+     explicitamente indicador de complemento (LOTE, N/S, SERIE, VAL, FAB,
+     LACRE, REF, COD, VENC, marcador "#" com código, e datas dd/mm/aaaa).
+     Assim, siglas legítimas do nome (MOD 5804R, C-MAG HS7, UV-5100 etc.)
+     são preservadas.
+  */
+  /* 1) Corta a partir do primeiro rótulo de complemento. */
+  const rot='(?:LOTE|L\\.\\s*T\\.|LT(?=[\\s.:#\\-/]|$)|N[\\s.]*[/\\-.][\\s.]*S(?=[\\s.:#\\-/]|$)|NS[.:](?!\\w)|NS(?=\\s|$)|S[\\s.]*[/\\-.][\\s.]*N(?=[\\s.:#\\-/]|$)|N[ºO°]?\\s*S[EÉ]RIE|S[EÉ]RIE|VALIDADE|VAL(?=[.:\\s])|VENCIMENTO|VENC(?=[.:\\s])|FABRICA[ÇC][AÃ]O|FABRIC\\.|FAB(?=[.:\\s])|LACRE|LACR(?=[.:\\s])|REF(?=[.:\\s])|COD(?=[.:\\s]))';
+  const re=new RegExp('[\\s\\-\\.,;:/\\|\\(\\[]+'+rot+'[\\s.:#\\-/]*.*$','i');
+  s=s.replace(re,'');
+  /* 2) Marcador "#NS..." (padrão da base bruta) e "#codigo" ao final. */
+  s=s.replace(/\s*#\s?N\s?[S/]\s?[.:]?\s*[A-Za-z0-9\-\/]{2,}.*$/i,'');
+  s=s.replace(/\s*#[A-Za-z0-9\-\/]{2,}\s*$/,'');
+  /* 3) Datas soltas ao final (dd/mm/aaaa, aaaa-mm-dd). */
+  s=s.replace(/[\s\-\.\,;:/\|]+(\d{2}[\/\-]\d{2}[\/\-]\d{2,4}|\d{4}[\/\-]\d{2}[\/\-]\d{2}).*$/,'');
+  /* 4) Sufixos entre parênteses/colchetes contendo dígitos
+        (típicos de LOTE / SÉRIE / VALIDADE / códigos internos). */
+  s=s.replace(/\s*[\(\[][^)\]]*\d[^)\]]*[\)\]]\s*$/,'');
+  /* 5) Números longos soltos ao final (≥6 dígitos), típicos de nº de série
+        ou lote sem rótulo explícito. */
+  s=s.replace(/[\s\-\.,;:/\|]+\d{6,}\s*$/,'');
+  /* 6) Limpa separadores pendurados no final. */
+  s=s.replace(/[\s\-\.,;:/\|#]+$/,'').replace(/\s+/g,' ').trim();
+  return s||String(raw).trim();
+}
+
+function familia(n){ return up(n).replace(/[^A-Z0-9\s\-\/]/g,' ').split(/\s+/).filter(Boolean).slice(0,3).join(' ')||'OUTROS'; }
+function mk(o){ const d=o.dtemi||o.dtent;
+  const nomeOrig=o.nome; const nome=canonNome(o.nome);
+  const r={...o,nome,nomeOrig,ano:d?d.getFullYear():null,mes:d?d.getMonth()+1:null,fam:familia(nome)};
+  const p=depreciar(r); r.dep=p.dep; r.atual=p.atual; r.depMeses=p.m; return r; }
+
+/* ---- formato 1: planilha tratada (aba Equipamentos) ---- */
+function parseTratada(wb){
+  const name=wb.SheetNames.find(n=>/equipament/i.test(n)); if(!name)return null;
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:null});
+  let hi=-1;
+  rows.forEach((r,i)=>{ if(hi<0&&r&&r.some(c=>String(c||'').trim()==='Nº NF')&&r.some(c=>/Equipamento/i.test(String(c||''))))hi=i; });
+  if(hi<0)return null;
+  const H={}; rows[hi].forEach((c,i)=>{H[String(c||'').trim()]=i;});
+  const g=(r,k)=>H[k]!=null?r[H[k]]:null, out=[];
+  for(let i=hi+1;i<rows.length;i++){ const r=rows[i]; if(!r||g(r,'Equipamento')==null||String(g(r,'Equipamento')).trim()==='')continue;
+    const qtd=num(g(r,'Qtde.'))||1, vu=num(g(r,'Valor Unitário (R$)'));
+    let vt=num(g(r,'Valor Total (R$)')); if(!vt) vt=qtd*vu;
+    out.push(mk({empresa:String(g(r,'Empresa')||'LABMEDIC'),nf:String(g(r,'Nº NF')??''),forn:String(g(r,'Fornecedor')||'').trim(),
+      dtemi:toDate(g(r,'Data Emissão')),dtent:toDate(g(r,'Data Entrada')),nome:String(g(r,'Equipamento')).trim(),
+      serie:String(g(r,'Nº de Série')||'').trim(),cod:g(r,'Código')!=null?String(g(r,'Código')):'',cfop:g(r,'CFOP')!=null?String(g(r,'CFOP')):'',
+      ncm:g(r,'NCM')!=null?String(g(r,'NCM')):'',qtd,vu:vu||(qtd?vt/qtd:0),vt}));
+  }
+  if(!out.length)return null;
+  CRIT='Fonte: planilha tratada <b>Equipamentos Adquiridos – LABMEDIC</b> (aba "'+name+'"), já contendo apenas os bens de capital extraídos das notas fiscais de entrada. Valores conforme a NF de origem, sem correção monetária.';
+  return {out,items:out.length,src:'tratada'};
+}
+/* ---- formato 2: base bruta de NF de entrada ---- */
+function parseBruta(wb){
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true});
+  let ctx=null,items=0,out=[];
+  for(const r of rows){ if(!r)continue; const c0=r[0];
+    if(r[11]!=null&&r[12]!=null&&up(c0??'')!=='ENTRADA'&&up(r[11])!=='NF DE COMPRA'){ ctx={nf:String(r[11]),forn:String(r[12]).trim(),dtent:toDate(r[14]),dtemi:toDate(r[16])}; continue; }
+    if(['Produto','Entrada'].includes(String(c0??'').trim()))continue;
+    if(!ctx||c0==null||String(c0).trim()==='')continue; if(r[7]==null)continue;
+    items++; const prod=String(c0).trim(),cfop=String(r[7]).trim();
+    if(!BUY.has(cfop))continue;
+    if(!/#?\s?NS[\s.:]|N\/S/.test(up(prod)))continue;
+    const serie=serieOf(prod),nome=nomeOf(prod,serie);
+    if(EXCL.some(k=>up(nome).includes(k)))continue;
+    const qtd=num(r[3]),vu=num(r[4]),vt=num(r[9])||qtd*vu; if(vt<500)continue;
+    out.push(mk({empresa:'LABMEDIC',nf:ctx.nf,forn:ctx.forn,dtemi:ctx.dtemi,dtent:ctx.dtent,nome,serie,cod:r[1]?String(r[1]):'',cfop,ncm:r[8]!=null?String(r[8]):'',qtd,vu,vt}));
+  }
+  CRIT='• Considerados apenas itens com CFOP de compra (1/2/5/6 – 101, 102, 108, 113, 401, 403, 404, 551, 556).<br>'+
+   '• Excluídos comodato, demonstração e remessas — não representam aquisição.<br>'+
+   '• Mantidos apenas bens de capital identificados pelo nº de série no próprio nome do produto (NS, NS., NS:, #NS, N/S).<br>'+
+   '• Excluídos eletrodos, colunas, PCB, partes e peças; corte mínimo de R$ 500,00 por item.<br>'+
+   '• Valores conforme a NF de origem, sem correção monetária.';
+  return {out,items,src:'bruta'};
+}
+function parseWorkbook(wb){ const t=parseTratada(wb); if(t)return t; const b=parseBruta(wb); return b; }
+
+/* ---------- UI ---------- */
+function fill(sel,vals,fmt=(v=>v)){ sel.innerHTML='<option value="">(Todos)</option>'+vals.map(v=>`<option value="${String(v).replace(/"/g,'&quot;')}">${fmt(v)}</option>`).join(''); }
+const selected=sel=>[...sel.selectedOptions].map(o=>o.value).filter(v=>v!=='');
+
+/* -------- Multi-select customizado com busca e checkbox -------- */
+const MS_STATE={}; /* targetId -> {values:string[], all:string[], search:'', label} */
+const MS_LABELS={fForn:'fornecedor',fMod:'equipamento',fFam:'família'};
+function msBuild(targetId,values){
+  const wrap=document.querySelector('.ms[data-target="'+targetId+'"]'); if(!wrap) return;
+  MS_STATE[targetId]={values:[],all:values.slice(),search:'',label:MS_LABELS[targetId]||''};
+  wrap.innerHTML=`
+    <button type="button" class="ms-btn" aria-haspopup="listbox" aria-expanded="false"><span class="lbl">(Todos)</span></button>
+    <div class="ms-panel" role="listbox">
+      <div class="ms-search">
+        <input type="text" placeholder="Buscar ${MS_STATE[targetId].label}…" autocomplete="off">
+        <button type="button" class="clr" title="limpar busca">×</button>
+      </div>
+      <div class="ms-actions">
+        <button type="button" data-act="all">Marcar todos</button>
+        <button type="button" data-act="none">Desmarcar todos</button>
+        <button type="button" data-act="inv">Inverter</button>
+      </div>
+      <div class="ms-list"></div>
+      <div class="ms-foot"><span>Selecione uma ou mais opções</span><span class="sel">0 / ${values.length}</span></div>
+    </div>`;
+  const btn=wrap.querySelector('.ms-btn'), panel=wrap.querySelector('.ms-panel'),
+        search=wrap.querySelector('.ms-search input'), clr=wrap.querySelector('.ms-search .clr'),
+        list=wrap.querySelector('.ms-list');
+  btn.onclick=e=>{e.stopPropagation();const on=wrap.classList.toggle('open');btn.classList.toggle('open',on);btn.setAttribute('aria-expanded',on);if(on){search.focus();msRender(targetId);}};
+  document.addEventListener('click',e=>{if(!wrap.contains(e.target)){wrap.classList.remove('open');btn.classList.remove('open');btn.setAttribute('aria-expanded','false');}});
+  search.oninput=()=>{MS_STATE[targetId].search=search.value;clr.classList.toggle('on',!!search.value);msRender(targetId);};
+  clr.onclick=e=>{e.stopPropagation();search.value='';MS_STATE[targetId].search='';clr.classList.remove('on');msRender(targetId);search.focus();};
+  wrap.querySelectorAll('.ms-actions button').forEach(b=>{
+    b.onclick=e=>{e.stopPropagation();const act=b.dataset.act;const st=MS_STATE[targetId];
+      const visible=st.all.filter(v=>!st.search||up(v).includes(up(st.search)));
+      if(act==='all'){const s=new Set(st.values);visible.forEach(v=>s.add(v));st.values=[...s];}
+      else if(act==='none'){const s=new Set(visible);st.values=st.values.filter(v=>!s.has(v));}
+      else if(act==='inv'){const s=new Set(st.values);visible.forEach(v=>{s.has(v)?s.delete(v):s.add(v);});st.values=[...s];}
+      msSync(targetId);msRender(targetId);applyFilters();};
+  });
+  list.addEventListener('click',e=>{
+    const opt=e.target.closest('.ms-opt'); if(!opt) return;
+    const v=opt.dataset.v; const st=MS_STATE[targetId];
+    const i=st.values.indexOf(v); if(i>=0)st.values.splice(i,1); else st.values.push(v);
+    msSync(targetId); msRender(targetId); applyFilters();
+  });
+  msSync(targetId); msRender(targetId);
+}
+function msRender(targetId){
+  const wrap=document.querySelector('.ms[data-target="'+targetId+'"]'); if(!wrap) return;
+  const st=MS_STATE[targetId], list=wrap.querySelector('.ms-list'), btn=wrap.querySelector('.ms-btn .lbl'),
+        foot=wrap.querySelector('.ms-foot .sel');
+  const q=up(st.search.trim());
+  const filtered=st.all.filter(v=>!q||up(v).includes(q));
+  const chosen=new Set(st.values);
+  if(!filtered.length){list.innerHTML='<div class="ms-empty">Nenhum item encontrado</div>';}
+  else{
+    list.innerHTML=filtered.slice(0,600).map(v=>{
+      const c=chosen.has(v); const safe=String(v).replace(/"/g,'&quot;');
+      return `<label class="ms-opt${c?' checked':''}" data-v="${safe}">
+        <input type="checkbox" ${c?'checked':''} tabindex="-1">
+        <span class="lbl" title="${safe}">${v}</span></label>`;
+    }).join('') + (filtered.length>600?`<div class="ms-empty">Mostrando 600 de ${filtered.length} — refine a busca</div>`:'');
+  }
+  const n=st.values.length;
+  const label=n===0?'(Todos)':n===1?st.values[0]:n+' selecionados';
+  wrap.querySelector('.ms-btn .lbl').textContent='';
+  const cnt=document.createElement('span'); cnt.className='count'+(n===0?' zero':''); cnt.textContent=n||'0';
+  const txt=document.createElement('span'); txt.textContent=' '+(n===0?'(Todos)':(n===1?st.values[0]:n+' selecionados'));
+  wrap.querySelector('.ms-btn .lbl').appendChild(txt);
+  wrap.querySelector('.ms-btn .lbl').appendChild(cnt);
+  foot.textContent=`${n} / ${st.all.length}`;
+}
+function msSync(targetId){
+  /* espelha os valores no <select multiple> escondido para manter compatibilidade com applyFilters/gerarPDF */
+  const sel=$(targetId); if(!sel) return;
+  const chosen=new Set(MS_STATE[targetId].values);
+  [...sel.options].forEach(o=>{o.selected=o.value!==''&&chosen.has(o.value);});
+}
+function msClearAll(){
+  ['fForn','fMod','fFam'].forEach(id=>{
+    if(MS_STATE[id]){MS_STATE[id].values=[];MS_STATE[id].search='';
+      const wrap=document.querySelector('.ms[data-target="'+id+'"]');
+      if(wrap){const s=wrap.querySelector('.ms-search input');if(s){s.value='';wrap.querySelector('.ms-search .clr').classList.remove('on');}}
+      msSync(id); msRender(id);}
+  });
+}
+
+function buildFilters(){
+  fill($('fAno'),[...new Set(ALL.map(x=>x.ano))].filter(Boolean).sort());
+  fill($('fMes'),[1,2,3,4,5,6,7,8,9,10,11,12],v=>MES[v]);
+  const fornVals=[...new Set(ALL.map(x=>x.forn))].filter(Boolean).sort();
+  const modVals=[...new Set(ALL.map(x=>x.nome))].filter(Boolean).sort();
+  const famVals=[...new Set(ALL.map(x=>x.fam))].filter(Boolean).sort();
+  fill($('fForn'),fornVals);
+  fill($('fMod'),modVals);
+  fill($('fFam'),famVals);
+  fill($('fCfop'),[...new Set(ALL.map(x=>x.cfop))].filter(Boolean).sort());
+  const emps=[...new Set(ALL.map(x=>x.empresa))].filter(Boolean).sort();
+  fill($('fEmp'),emps);
+  $('boxEmp').classList.toggle('hidden',SRC==='bruta');
+  msBuild('fForn',fornVals);
+  msBuild('fMod',modVals);
+  msBuild('fFam',famVals);
+}
+function applyFilters(){
+  const q=up($('fBusca').value.trim());
+  BUSCA=q.length>0; $('avisoBusca').classList.toggle('hidden',!BUSCA);
+  if(BUSCA){
+    const termos=q.split(/\s+/).filter(Boolean);
+    VIEW=ALL.filter(x=>{const hay=up([x.nome,x.serie,x.nf,x.cod,x.forn,x.empresa,x.cfop,x.ncm,x.fam,x.ano,MES[x.mes]||''].join(' '));
+      return termos.every(t=>hay.includes(t));});
+    render(); return;
+  }
+  const a=selected($('fAno')).map(Number),m=selected($('fMes')).map(Number),f=selected($('fForn')),
+    mo=selected($('fMod')),fa=selected($('fFam')),cf=selected($('fCfop')),em=selected($('fEmp')),
+    min=+$('fMin').value||0;
+  VIEW=ALL.filter(x=>(!a.length||a.includes(x.ano))&&(!m.length||m.includes(x.mes))&&(!f.length||f.includes(x.forn))&&
+    (!mo.length||mo.includes(x.nome))&&(!fa.length||fa.includes(x.fam))&&(!cf.length||cf.includes(x.cfop))&&
+    (!em.length||em.includes(x.empresa))&&x.vt>=min);
+  render();
+}
+function agg(arr,keyfn){ const m=new Map();
+  arr.forEach(x=>{const k=keyfn(x);const o=m.get(k)||{k,itens:0,un:0,vt:0};o.itens++;o.un+=x.qtd;o.vt+=x.vt;m.set(k,o);});
+  return [...m.values()]; }
+function kpis(){
+  const vt=VIEW.reduce((s,x)=>s+x.vt,0),un=VIEW.reduce((s,x)=>s+x.qtd,0);
+  const anos=[...new Set(VIEW.map(x=>x.ano))].filter(Boolean).sort();
+  const porAno=agg(VIEW,x=>x.ano).sort((a,b)=>b.vt-a.vt)[0];
+  const topF=agg(VIEW,x=>x.forn).sort((a,b)=>b.vt-a.vt)[0];
+  const maior=VIEW.slice().sort((a,b)=>b.vt-a.vt)[0];
+  const cut=(s,n)=>s&&s.length>n?s.slice(0,n)+'…':s||'—';
+  const data=[
+    ['Investimento total',brl(vt),VIEW.length+' itens de equipamento','k1'],
+    ['Unidades adquiridas',int(un),'ticket médio '+brl(un?vt/un:0),'k2'],
+    ['Notas fiscais',int(new Set(VIEW.map(x=>x.nf)).size),int(new Set(VIEW.map(x=>x.forn)).size)+' fornecedores','k3'],
+    ['Período',anos.length?anos[0]+' – '+anos[anos.length-1]:'—',anos.length?'média '+brl0(vt/anos.length)+'/ano':'','k4'],
+    ['Ano de maior investimento',porAno?porAno.k:'—',porAno?brl0(porAno.vt):'','k1'],
+    ['Maior fornecedor','<span class="sm">'+cut(topF&&topF.k,34)+'</span>',topF?brl0(topF.vt)+' ('+(vt?(topF.vt/vt*100).toFixed(1):0)+'%)':'','k2'],
+    ['Modelos distintos',int(new Set(VIEW.map(x=>x.nome)).size),int(VIEW.filter(x=>x.serie).length)+' itens com nº de série','k3'],
+    ['Maior aquisição',maior?brl0(maior.vt):'—','<span>'+cut(maior&&maior.nome,34)+'</span>','k4'],
+    ['Depreciação acumulada',brl0(VIEW.reduce((s,x)=>s+(x.dep||0),0)),'linear — vida útil 10 anos','k1'],
+    ['Valor atual do parque',brl0(VIEW.reduce((s,x)=>s+(x.atual||0),0)),'referência '+dt(REF),'k2']];
+  $('kpis').innerHTML=data.map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+  $('chipQtd').textContent=int(VIEW.length)+' itens • '+int(un)+' unidades • '+brl(vt);
+  $('resumoFiltro').innerHTML='Exibindo <b>'+int(VIEW.length)+'</b> de '+int(ALL.length)+' itens — '+brl(vt);
+}
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function chart(id,cfg){ charts[id]&&charts[id].destroy(); charts[id]=new Chart($(id),cfg); }
+function drawCharts(){
+  const grid=css('--bd'),txt=css('--mut'),navy=css('--navy2'),gold=css('--gold'),teal=css('--teal'),rose=css('--rose');
+  Chart.defaults.font.family="'Inter',Arial,Helvetica,sans-serif"; Chart.defaults.color=txt;
+  const base=(extra={})=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:grid},ticks:{color:txt}},y:{grid:{color:grid},ticks:{color:txt,callback:v=>brl0(v)}}},...extra});
+  const pa=agg(VIEW,x=>x.ano).filter(o=>o.k).sort((a,b)=>a.k-b.k);
+  chart('cAno',{type:'bar',data:{labels:pa.map(o=>o.k),datasets:[{data:pa.map(o=>o.vt),backgroundColor:navy,borderRadius:6}]},
+    options:base({plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>brl(c.parsed.y)}}}})});
+  const pf=agg(VIEW,x=>x.forn).sort((a,b)=>b.vt-a.vt).slice(0,8);
+  chart('cForn',{type:'bar',data:{labels:pf.map(o=>o.k.split(' ').slice(0,3).join(' ')),datasets:[{data:pf.map(o=>o.vt),backgroundColor:gold,borderRadius:6}]},
+    options:{...base(),indexAxis:'y',scales:{x:{grid:{color:grid},ticks:{color:txt,callback:v=>brl0(v)}},y:{grid:{display:false},ticks:{color:txt,font:{size:10}}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>pf[c[0].dataIndex].k,label:c=>brl(c.parsed.x)}}}}});
+  /* Depreciação acumulada por família/modelo de equipamento (sem quebra por período). */
+  const depPorFam=new Map();
+  VIEW.forEach(x=>{ if(x.dep==null) return; depPorFam.set(x.fam,(depPorFam.get(x.fam)||0)+x.dep); });
+  const depFam=[...depPorFam.entries()].map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
+  const depFamTop=depFam.slice(0,10);
+  const depTot=depFam.reduce((s,o)=>s+o.v,0);
+  chart('cMes',{type:'bar',data:{labels:depFamTop.map(o=>o.k.length>28?o.k.slice(0,28)+'…':o.k),
+      datasets:[{data:depFamTop.map(o=>o.v),backgroundColor:teal,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>depFamTop[c[0].dataIndex].k,
+        label:c=>brl(c.parsed.x)+(depTot?'  ('+(c.parsed.x/depTot*100).toFixed(1).replace('.',',')+'% do total)':'')}}},
+      scales:{x:{grid:{color:grid},ticks:{color:txt,callback:v=>brl0(v)}},
+        y:{grid:{display:false},ticks:{color:txt,font:{size:10}}}}}});
+  const pp=agg(VIEW,x=>x.forn).sort((a,b)=>b.vt-a.vt); const top=pp.slice(0,5);
+  const resto=pp.slice(5).reduce((s,o)=>s+o.vt,0); const labs=top.map(o=>o.k.split(' ').slice(0,3).join(' ')).concat(resto?['Demais']:[]);
+  chart('cPie',{type:'doughnut',data:{labels:labs,datasets:[{data:top.map(o=>o.vt).concat(resto?[resto]:[]),
+    backgroundColor:[navy,gold,teal,rose,'#7A8CB8','#B9C3D8'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:txt,boxWidth:12,font:{size:10}}},
+      tooltip:{callbacks:{label:c=>c.label+': '+brl(c.parsed)}}}}});
+  const pmo=agg(VIEW,x=>x.nome).sort((a,b)=>b.vt-a.vt).slice(0,10);
+  chart('cMod',{type:'bar',data:{labels:pmo.map(o=>o.k.length>32?o.k.slice(0,32)+'…':o.k),datasets:[{data:pmo.map(o=>o.vt),backgroundColor:teal,borderRadius:6}]},
+    options:{...base(),indexAxis:'y',scales:{x:{grid:{color:grid},ticks:{color:txt,callback:v=>brl0(v)}},y:{grid:{display:false},ticks:{color:txt,font:{size:10}}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>pmo[c[0].dataIndex].k,label:c=>brl(c.parsed.x)}}}}});
+  const ps=agg(VIEW.filter(x=>x.mes),x=>x.mes).sort((a,b)=>a.k-b.k);
+  chart('cSaz',{type:'bar',data:{labels:ps.map(o=>MES[o.k]),datasets:[{data:ps.map(o=>o.vt),backgroundColor:rose,borderRadius:6}]},
+    options:base({plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>brl(c.parsed.y)}}}})});
+}
+function tblResumo(){
+  const total=VIEW.reduce((s,x)=>s+x.vt,0);
+  const anos=[...new Set(VIEW.map(x=>x.ano))].filter(Boolean).sort();
+  const acum=rows=>({itens:rows.length,un:rows.reduce((s,x)=>s+x.qtd,0),vt:rows.reduce((s,x)=>s+x.vt,0),
+    dep:rows.reduce((s,x)=>s+(x.dep||0),0),at:rows.reduce((s,x)=>s+(x.atual||0),0)});
+  let h='<thead><tr><th>Ano</th><th>Mês</th><th>Itens</th><th>Unidades</th><th>Valor Total (R$)</th><th>Depreciação acumulada (R$)</th><th>Valor atual (R$)</th><th>% do Total</th></tr></thead><tbody>';
+  anos.forEach(a=>{
+    const mesesDoAno=[...new Set(VIEW.filter(x=>x.ano===a&&x.mes).map(x=>x.mes))].sort((p,q)=>p-q);
+    mesesDoAno.forEach(m=>{
+      const o=acum(VIEW.filter(x=>x.ano===a&&x.mes===m));
+      h+=`<tr><td class="ctr">${a}</td><td class="ctr">${MES[m]}</td><td class="num">${int(o.itens)}</td><td class="num">${int(o.un)}</td><td class="num">${brl(o.vt)}</td><td class="num">${brl(o.dep)}</td><td class="num">${brl(o.at)}</td><td class="num">${pct(total?o.vt/total*100:0)}</td></tr>`;});
+    const t=acum(VIEW.filter(x=>x.ano===a&&x.mes));
+    h+=`<tr class="tot"><td class="ctr">${a}</td><td class="ctr">Total ${a}</td><td class="num">${int(t.itens)}</td><td class="num">${int(t.un)}</td><td class="num">${brl(t.vt)}</td><td class="num">${brl(t.dep)}</td><td class="num">${brl(t.at)}</td><td class="num">${pct(total?t.vt/total*100:0)}</td></tr>`;
+  });
+  const t=acum(VIEW);
+  h+=`</tbody><tfoot><tr><td colspan="2" class="ctr">TOTAL GERAL</td><td class="num">${int(t.itens)}</td><td class="num">${int(t.un)}</td><td class="num">${brl(t.vt)}</td><td class="num">${brl(t.dep)}</td><td class="num">${brl(t.at)}</td><td class="num">100,0%</td></tr></tfoot>`;
+  $('tResumo').innerHTML=h;
+}
+function tblAgg(el,label,keyfn){
+  const total=VIEW.reduce((s,x)=>s+x.vt,0);
+  const g=agg(VIEW,keyfn).sort((a,b)=>b.vt-a.vt);
+  let h=`<thead><tr><th>${label}</th><th>Itens</th><th>Un.</th><th>Valor Total</th><th>%</th></tr></thead><tbody>`;
+  g.forEach(o=>{h+=`<tr><td>${o.k}</td><td class="num">${int(o.itens)}</td><td class="num">${int(o.un)}</td><td class="num">${brl(o.vt)}</td><td class="num">${pct(total?o.vt/total*100:0)}</td></tr>`;});
+  h+=`</tbody><tfoot><tr><td>TOTAL</td><td class="num">${int(VIEW.length)}</td><td class="num">${int(VIEW.reduce((s,x)=>s+x.qtd,0))}</td><td class="num">${brl(total)}</td><td class="num">100,0%</td></tr></tfoot>`;
+  $(el).innerHTML=h;
+}
+const COLS=[['#','idx'],['Empresa','empresa'],['Nº NF','nf'],['Data Emissão','dtemi'],['Data Entrada','dtent'],['Equipamento','nome'],['Nº de Série','serie'],['Código','cod'],['Fornecedor','forn'],['CFOP','cfop'],['NCM','ncm'],['Qtde.','qtd'],['Valor Unitário','vu'],['Valor Total','vt'],['Depreciação acumulada','dep'],['Valor atual','atual'],['Ano','ano'],['Mês','mes']];
+function sortedRows(){
+  return VIEW.slice().sort((a,b)=>{const k=sort.k;let x=a[k],y=b[k];
+    if(x instanceof Date||y instanceof Date){x=x?x.getTime():0;y=y?y.getTime():0;}
+    if(typeof x==='string'||typeof y==='string'){x=up(x);y=up(y);}
+    return (x>y?1:x<y?-1:0)*sort.dir;});
+}
+function tblEq(){
+  const rows=sortedRows();
+  let h='<thead><tr>'+COLS.map(([l,k])=>`<th class="sortable" data-k="${k}">${l}${sort.k===k?(sort.dir>0?' ▲':' ▼'):''}</th>`).join('')+'</tr></thead><tbody>';
+  rows.forEach((x,i)=>{ const nomeExib=x.nomeOrig||x.nome; h+=`<tr><td class="ctr">${i+1}</td><td class="ctr">${x.empresa}</td><td class="ctr">${x.nf}</td><td class="ctr">${dt(x.dtemi)}</td><td class="ctr">${dt(x.dtent)}</td><td title="Nome canônico: ${x.nome.replace(/"/g,'&quot;')}">${nomeExib}</td><td class="ctr">${x.serie||'—'}</td><td class="ctr">${x.cod}</td><td>${x.forn}</td><td class="ctr">${x.cfop}</td><td class="ctr">${x.ncm}</td><td class="num">${int(x.qtd)}</td><td class="num">${brl(x.vu)}</td><td class="num">${brl(x.vt)}</td><td class="num">${nd(x.dep)}</td><td class="num">${nd(x.atual)}</td><td class="ctr">${x.ano||''}</td><td class="ctr">${x.mes?MES[x.mes]:''}</td></tr>`; });
+  const un=VIEW.reduce((s,x)=>s+x.qtd,0),vt=VIEW.reduce((s,x)=>s+x.vt,0),
+    dep=VIEW.reduce((s,x)=>s+(x.dep||0),0),at=VIEW.reduce((s,x)=>s+(x.atual||0),0);
+  h+=`</tbody><tfoot><tr><td colspan="11" class="ctr">TOTAL (${int(VIEW.length)} itens)</td><td class="num">${int(un)}</td><td></td><td class="num">${brl(vt)}</td><td class="num">${brl(dep)}</td><td class="num">${brl(at)}</td><td colspan="2"></td></tr></tfoot>`;
+  $('tEq').innerHTML=h;
+  $('tEq').querySelectorAll('th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;
+    if(k==='idx')return; sort.dir=sort.k===k?-sort.dir:1; sort.k=k; tblEq();});
+  /* Posiciona a barra de rolagem do quadro no INÍCIO da listagem sempre que a
+     tabela é redesenhada. Usa requestAnimationFrame para garantir que o reset
+     ocorra APÓS o layout do novo conteúdo, evitando que o browser preserve o
+     scrollTop anterior. */
+  const sc=$('scrollEq');
+  if(sc){
+    sc.scrollTop=0; sc.scrollLeft=0; sc.scrollTo(0,0);
+    requestAnimationFrame(()=>{ sc.scrollTop=0; sc.scrollLeft=0; sc.scrollTo(0,0);
+      requestAnimationFrame(()=>{ sc.scrollTop=0; sc.scrollLeft=0; }); });
+  }
+}
+function render(){ kpis(); drawCharts(); tblResumo(); tblAgg('tForn','Fornecedor',x=>x.forn); tblAgg('tMod','Modelo',x=>x.nome); tblEq(); }
+
+/* ---------- export ---------- */
+function exportRows(){ return sortedRows().map((x,i)=>({'#':i+1,Empresa:x.empresa,'Nº NF':x.nf,'Data Emissão':dt(x.dtemi),'Data Entrada':dt(x.dtent),
+  Equipamento:x.nomeOrig||x.nome,'Equipamento (canônico)':x.nome,'Nº de Série':x.serie,'Código':x.cod,Fornecedor:x.forn,CFOP:x.cfop,NCM:x.ncm,'Qtde.':x.qtd,
+  'Valor Unitário (R$)':x.vu,'Valor Total (R$)':x.vt,
+  'Depreciação acumulada (R$)':x.dep==null?'N/D':Math.round(x.dep*100)/100,
+  ['Valor atual (R$) — '+dt(REF)]:x.atual==null?'N/D':Math.round(x.atual*100)/100,
+  'Meses depreciados':x.depMeses==null?'N/D':x.depMeses,
+  Ano:x.ano,'Mês':x.mes?MES[x.mes]:''})); }
+function dl(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
+$('csv').onclick=()=>{ const r=exportRows(); const head=Object.keys(r[0]||{});
+  const csv=[head.join(';')].concat(r.map(o=>head.map(k=>String(o[k]??'').replace(/;/g,',')).join(';'))).join('\n');
+  dl(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'Equipamentos_LABMEDIC.csv'); };
+$('xls').onclick=()=>{ const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(exportRows()),'Equipamentos');
+  XLSX.writeFile(wb,'Equipamentos_LABMEDIC.xlsx'); };
+$('print').onclick=()=>gerarPDF();
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function buildEscopo(){
+  return BUSCA?('Busca soberana: “'+esc($('fBusca').value.trim())+'” (sobrepõe os filtros)')
+    :['fAno','fMes','fForn','fMod','fFam','fCfop','fEmp'].map(id=>{const v=selected($(id));
+      if(!v.length)return null; const rot={fAno:'Ano',fMes:'Mês',fForn:'Fornecedor',fMod:'Equipamento',fFam:'Família',fCfop:'CFOP',fEmp:'Empresa adquirente'}[id];
+      return rot+': '+(id==='fMes'?v.map(n=>MES[+n]).join(', '):v.join(', '));}).filter(Boolean).join(' · ')||'Todos os registros (nenhum filtro aplicado)';
+}
+function gerarPDF(){
+  const rows=sortedRows();
+  if(!rows.length){ alert('Nenhum registro na seleção atual.'); return; }
+  const un=rows.reduce((s,x)=>s+x.qtd,0),vt=rows.reduce((s,x)=>s+x.vt,0),
+    dep=rows.reduce((s,x)=>s+(x.dep||0),0),at=rows.reduce((s,x)=>s+(x.atual||0),0);
+  const sd=rows.filter(x=>x.dep==null).length;
+  const emissao=new Date().toLocaleString('pt-BR');
+  const escopo=buildEscopo();
+  const tr=rows.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${esc(x.empresa)}</td><td class="c">${esc(x.nf)}</td><td class="c">${dt(x.dtemi)}</td><td>${esc(x.nomeOrig||x.nome)}</td><td class="c">${esc(x.serie||'—')}</td><td>${esc(x.forn)}</td><td class="n">${int(x.qtd)}</td><td class="n">${brl(x.vt)}</td><td class="n">${x.dep==null?'N/D':brl(x.dep)}</td><td class="n">${x.atual==null?'N/D':brl(x.atual)}</td></tr>`).join('');
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>GRUPO LABMEDIC — Relatório de equipamentos adquiridos</title>
+<style>
+@page{size:A4 landscape;margin:12mm 10mm 14mm}
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;color:#16233B;font-size:8.6pt;margin:0}
+.hd{display:flex;align-items:center;gap:12px;border-bottom:2.5pt solid #1F3864;padding-bottom:6pt;margin-bottom:8pt}
+.hd .lg{width:34pt;height:34pt;border-radius:6pt;background:#1F3864;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12pt}
+.hd h1{font-size:13pt;margin:0;color:#1F3864;letter-spacing:.3pt}
+.hd .s{font-size:8pt;color:#6B7690;margin-top:2pt}
+.hd .r{margin-left:auto;text-align:right;font-size:7.6pt;color:#6B7690;line-height:1.5}
+.box{border:.6pt solid #DFE4EE;border-radius:4pt;padding:5pt 7pt;margin-bottom:7pt;font-size:7.8pt;background:#FAFBFD}
+.kp{display:flex;gap:6pt;margin-bottom:8pt}
+.kp div{flex:1;border:.6pt solid #DFE4EE;border-left:2.5pt solid #2E5496;border-radius:4pt;padding:4pt 6pt}
+.kp b{display:block;font-size:10.5pt;color:#1F3864;margin-top:1pt}
+.kp span{font-size:6.8pt;text-transform:uppercase;letter-spacing:.5pt;color:#6B7690}
+table{width:100%;border-collapse:collapse;font-size:7.4pt}
+thead{display:table-header-group}
+th{background:#1F3864;color:#fff;border:.4pt solid #1F3864;padding:3pt;font-size:7.2pt}
+td{border:.4pt solid #DFE4EE;padding:2.6pt 3pt;vertical-align:top}
+tr{page-break-inside:avoid}
+tbody tr:nth-child(even){background:#F7F9FC}
+.n{text-align:right}.c{text-align:center}
+tfoot{display:table-footer-group}
+tfoot td{border:0;padding:3pt 0 0;font-size:6.8pt;color:#6B7690;font-weight:normal}
+tr.tot td{background:#D9E2F3;font-weight:bold}
+.lg2{margin-top:8pt;font-size:7.2pt;color:#6B7690;line-height:1.6;border-top:.6pt solid #DFE4EE;padding-top:5pt}
+@media print{.noprint{display:none}}
+</style></head><body>
+<div class="hd"><div class="lg">GL</div>
+<div><h1>GRUPO LABMEDIC — Relatório de equipamentos adquiridos</h1>
+<div class="s">Ativo imobilizado — aquisições identificadas em notas fiscais de entrada</div></div>
+<div class="r">Emissão: ${esc(emissao)}<br>Origem: ${SRC==='bruta'?'base bruta de NF de entrada':'planilha tratada de equipamentos'}<br>Registros: ${int(rows.length)}</div></div>
+<div class="box"><b>Escopo da seleção:</b> ${escopo}</div>
+<div class="kp">
+<div><span>Investimento total</span><b>${brl(vt)}</b></div>
+<div><span>Unidades</span><b>${int(un)}</b></div>
+<div><span>Depreciação acumulada</span><b>${brl(dep)}</b></div>
+<div><span>Valor atual (${dt(REF)})</span><b>${brl(at)}</b></div>
+</div>
+<table><thead><tr><th>#</th><th>Empresa</th><th>Nº NF</th><th>Emissão</th><th>Equipamento</th><th>Nº de série</th><th>Fornecedor</th><th>Qtd</th><th>Valor de aquisição</th><th>Depreciação acum.</th><th>Valor atual</th></tr></thead>
+<tbody>${tr}<tr class="tot"><td colspan="7" class="c">TOTAL — ${int(rows.length)} itens</td><td class="n">${int(un)}</td><td class="n">${brl(vt)}</td><td class="n">${brl(dep)}</td><td class="n">${brl(at)}</td></tr></tbody>
+<tfoot><tr><td colspan="11"><div style="border-top:.5pt solid #DFE4EE;padding-top:3pt;display:flex"><span>GRUPO LABMEDIC — documento gerado automaticamente pelo Dashboard de equipamentos adquiridos · uso interno</span><span style="margin-left:auto">${esc(emissao)}</span></div></td></tr></tfoot></table>
+<div class="lg2"><b>Legendas e critérios:</b>
+Depreciação linear (método das quotas constantes), vida útil de <b>10 anos</b> (120 meses) e sem valor residual, conforme prazos admitidos pela legislação fiscal brasileira (IN RFB 1.700/2017, Anexo III — máquinas e equipamentos).
+Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limitada a 100% do valor. Valor atual = valor de aquisição − depreciação acumulada, apurado na data de referência (${dt(REF)}).
+<b>N/D</b> = registro sem data ou sem valor de aquisição; excluído do cálculo de depreciação (${int(sd)} ${sd===1?'registro':'registros'} nesta seleção). Valores em reais (R$), conforme a NF de origem, sem correção monetária.
+</div>
+<script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
+</body></html>`;
+  const w=window.open('','_blank');
+  if(!w){ alert('Permita pop-ups para gerar o PDF.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
+/* ---------- PROGRESSO DE IMPORTAÇÃO ---------- */
+function progShow(on){ $('progWrap').classList.toggle('on',on); }
+function progSet(p,label,step){
+  const pct=Math.max(0,Math.min(100,Math.round(p)));
+  $('progFill').style.width=pct+'%';
+  $('progPct').textContent=pct+'%';
+  if(label!=null)$('progLabel').textContent=label;
+  if(step!=null)$('progStepText').textContent=step;
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+/* ---------- load ---------- */
+async function handle(file){
+  $('status').textContent='';
+  progShow(true);
+  progSet(2,'Iniciando importação…','Lendo '+file.name+' ('+(file.size/1024).toFixed(1)+' KB)…');
+
+  const buf=await new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    let last=0;
+    fr.onprogress=e=>{ if(e.lengthComputable){
+      const p=(e.loaded/e.total)*40; /* 0-40% = leitura */
+      if(p-last>1){ last=p; progSet(2+p,'Lendo arquivo','Buffer '+(e.loaded/1024).toFixed(0)+' KB / '+(e.total/1024).toFixed(0)+' KB'); }
+    }};
+    fr.onload=e=>resolve(e.target.result);
+    fr.onerror=reject;
+    fr.readAsArrayBuffer(file);
+  });
+
+  try{
+    progSet(45,'Decodificando planilha XLSX','Descompactando pastas de trabalho…');
+    await sleep(60);
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});
+    progSet(60,'Interpretando abas','Identificando estrutura de planilha…');
+    await sleep(80);
+
+    /* tentativa 1: planilha tratada */
+    let res=parseTratada(wb);
+    progSet(75,'Extraindo equipamentos',res?'Aba "Equipamentos" identificada — lendo linhas…':'Aba tratada não localizada — analisando base bruta de NF…');
+    await sleep(90);
+
+    if(!res){ res=parseBruta(wb); }
+    progSet(90,'Aplicando regras de bens de capital','Classificando famílias e calculando depreciação…');
+    await sleep(80);
+
+    if(!res||!res.out.length){
+      progSet(100,'Nada identificado','—');
+      $('status').innerHTML='<b>Nenhum equipamento identificado.</b> Verifique se o arquivo é a planilha de equipamentos ou a base de NF de entrada.';
+      setTimeout(()=>progShow(false),1200);
+      return;
+    }
+    SRC=res.src;
+    ALL=res.out.sort((a,b)=>(a.dtemi?a.dtemi.getTime():0)-(b.dtemi?b.dtemi.getTime():0));
+    $('criterio').innerHTML=CRIT;
+
+    progSet(100,'Concluído',int(ALL.length)+' equipamentos identificados.');
+    $('status').innerHTML='Arquivo <b>'+file.name+'</b> processado — <b>'+int(ALL.length)+'</b> equipamentos identificados'+(res.src==='bruta'?' entre '+int(res.items)+' itens de NF analisados':'')+'.';
+
+    buildFilters();
+    $('app').classList.remove('hidden'); $('app').classList.add('fade-in');
+    await sleep(350);
+    $('loader').classList.add('hidden');
+    progShow(false);
+    applyFilters();
+  }catch(err){
+    progSet(100,'Erro','—');
+    $('status').textContent='Erro ao ler o arquivo: '+err.message;
+    setTimeout(()=>progShow(false),1500);
+  }
+}
+
+function openImportPicker(){
+  $('loader').classList.remove('hidden');
+  $('loader').classList.add('fade-in');
+  $('status').textContent='Selecione uma planilha para atualizar o dashboard.';
+  progShow(false);
+  progSet(0,'Preparando importação…','Aguardando arquivo…');
+  try{ $('loader').scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ }
+  $('file').click();
+}
+$('importBtn').onclick=openImportPicker;
+$('file').onchange=e=>e.target.files[0]&&handle(e.target.files[0]);
+$('reload').onclick=()=>{ $('app').classList.add('hidden'); $('loader').classList.remove('hidden'); $('loader').classList.add('fade-in'); $('file').value=''; $('status').textContent=''; progShow(false); progSet(0,'Preparando importação…','Aguardando arquivo…'); try{ $('loader').scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ } };
+
+const HERO_SLIDES=[...document.querySelectorAll('.hero-slide')];
+const HERO_DOTS=[...document.querySelectorAll('.hero-dot')];
+let heroIdx=0, heroTimer=null;
+function setHero(idx){
+  if(!HERO_SLIDES.length) return;
+  heroIdx=(idx+HERO_SLIDES.length)%HERO_SLIDES.length;
+  HERO_SLIDES.forEach((el,i)=>el.classList.toggle('active',i===heroIdx));
+  HERO_DOTS.forEach((el,i)=>el.classList.toggle('active',i===heroIdx));
+}
+function startHero(){
+  if(HERO_SLIDES.length<2) return;
+  clearInterval(heroTimer);
+  heroTimer=setInterval(()=>setHero(heroIdx+1),5200);
+}
+HERO_DOTS.forEach((dot,i)=>dot.addEventListener('click',()=>{ setHero(i); startHero(); }));
+const heroCarousel=$('heroCarousel');
+if(heroCarousel){
+  heroCarousel.addEventListener('mouseenter',()=>clearInterval(heroTimer));
+  heroCarousel.addEventListener('mouseleave',startHero);
+}
+setHero(0); startHero();
+
+/* ---------- SEÇÃO RETRÁTIL: Relação de equipamentos adquiridos (inicia recolhida) ---------- */
+let eqAberta=false;
+function setEqAberta(v){
+  eqAberta=v;
+  $('scrollEq').classList.toggle('hidden',!v);
+  $('icoEq').classList.toggle('open',v);
+  $('hintEq').textContent=v?'clique para recolher':'clique para expandir';
+}
+$('hdrEq').onclick=()=>setEqAberta(!eqAberta);
+setEqAberta(false);
+['fAno','fMes','fCfop','fEmp'].forEach(id=>$(id).onchange=applyFilters);
+$('fBusca').oninput=applyFilters; $('fMin').oninput=applyFilters;
+$('clear').onclick=()=>{ ['fAno','fMes','fCfop','fEmp'].forEach(id=>[...$(id).options].forEach(o=>o.selected=false));
+  msClearAll(); $('fBusca').value=''; $('fMin').value=0; applyFilters(); };
+
+/* Data de referência para a depreciação */
+function pad2(n){return String(n).padStart(2,'0');}
+function toISO(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+$('fRef').value=toISO(REF);
+$('fRef').onchange=()=>{
+  const v=$('fRef').value; if(!v){REF=new Date();REF.setHours(0,0,0,0);$('fRef').value=toISO(REF);}
+  else{const p=v.split('-').map(Number);REF=new Date(p[0],p[1]-1,p[2]);}
+  if(ALL.length){recalcDepreciacao();applyFilters();}
+};
+$('rstRef').onclick=()=>{REF=new Date();REF.setHours(0,0,0,0);$('fRef').value=toISO(REF);
+  if(ALL.length){recalcDepreciacao();applyFilters();}};
+
+$('theme').onclick=()=>{ const d=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',d?'light':'dark');
+  $('theme').textContent=d?'☾ Tema escuro':'☀ Tema claro';
+  try{localStorage.setItem('gl-theme',d?'light':'dark')}catch(_){}
+  if(ALL.length)drawCharts(); };
+try{ if(localStorage.getItem('gl-theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');$('theme').textContent='☀ Tema claro';} }catch(_){}
+
+/* =========================================================================
+   MODAL — MÉTRICAS DE DEPRECIAÇÃO (cards, listagens por período/empresa,
+   exportação em planilha profissional e relatório PDF em estilo contábil)
+   ========================================================================= */
+function depMetrics(rows){
+  const vt=rows.reduce((s,x)=>s+x.vt,0), un=rows.reduce((s,x)=>s+x.qtd,0);
+  const comDep=rows.filter(x=>x.dep!=null);
+  const dep=comDep.reduce((s,x)=>s+x.dep,0), at=comDep.reduce((s,x)=>s+x.atual,0);
+  const totalDepreciados=comDep.filter(x=>x.depMeses>=VIDA_MESES).length;
+  const idadeMedia=comDep.length?comDep.reduce((s,x)=>s+x.depMeses,0)/comDep.length:0;
+  const pctDepMedio=vt?dep/vt*100:0;
+  return {vt,un,dep,at,pctDepMedio,totalDepreciados,idadeMedia,itens:rows.length,semDados:rows.length-comDep.length};
+}
+function depCells(label,rows){
+  const k=depMetrics(rows);
+  return `<td>${label}</td><td class="num">${int(k.itens)}</td><td class="num">${int(k.un)}</td><td class="num">${brl(k.vt)}</td><td class="num">${brl(k.dep)}</td><td class="num">${brl(k.at)}</td><td class="num">${pct(k.pctDepMedio)}</td>`;
+}
+function depTableHead(label){
+  return `<thead><tr><th>${label}</th><th>Itens</th><th>Unidades</th><th>Valor de aquisição</th><th>Depreciação acum.</th><th>Valor atual</th><th>% depreciado</th></tr></thead>`;
+}
+function depBuildKpiCards(rows){
+  const k=depMetrics(rows);
+  const cards=[
+    ['Valor de aquisição',brl(k.vt),int(k.itens)+' itens · '+int(k.un)+' unidades','k1'],
+    ['Depreciação acumulada',brl(k.dep),pct(k.pctDepMedio)+' do valor de aquisição','k2'],
+    ['Valor atual do parque',brl(k.at),'referência '+dt(REF),'k1'],
+    ['Depreciação média',pct(k.pctDepMedio),'linear · vida útil 10 anos (120 meses)','k3'],
+    ['Idade média',(k.idadeMedia?k.idadeMedia.toFixed(1).replace('.',','):'—')+' meses','desde a emissão da NF','k2'],
+    ['Totalmente depreciados',int(k.totalDepreciados),'de '+int(k.itens)+' itens ('+pct(k.itens?k.totalDepreciados/k.itens*100:0)+')','k3']];
+  return cards.map(([l,v,s,c])=>`<div class="dep-kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+}
+function depPanelPeriodo(rows){
+  const anos=[...new Set(rows.map(x=>x.ano))].filter(Boolean).sort();
+  if(!anos.length) return '<div class="dep-empty">Nenhum registro na seleção atual.</div>';
+  return anos.map(a=>{
+    const rowsAno=rows.filter(x=>x.ano===a);
+    const meses=[...new Set(rowsAno.filter(x=>x.mes).map(x=>x.mes))].sort((p,q)=>p-q);
+    const kAno=depMetrics(rowsAno);
+    const body=meses.map(m=>`<tr>${depCells(MES[m],rowsAno.filter(x=>x.mes===m))}</tr>`).join('');
+    return `<details class="dep-group" open><summary><span class="arrow">▸</span>${a}
+      <span class="chip">${brl0(kAno.vt)} · ${pct(kAno.pctDepMedio)} depreciado</span></summary>
+      <div class="scroll" style="max-height:300px"><table>${depTableHead('Mês')}<tbody>${body}</tbody>
+      <tfoot><tr class="tot">${depCells('Total '+a,rowsAno)}</tr></tfoot></table></div></details>`;
+  }).join('');
+}
+function depPanelEmpresa(rows){
+  const emps=[...new Set(rows.map(x=>x.empresa))].filter(Boolean).sort();
+  if(!emps.length) return '<div class="dep-empty">Nenhum registro na seleção atual.</div>';
+  return emps.map(emp=>{
+    const rowsEmp=rows.filter(x=>x.empresa===emp);
+    const kEmp=depMetrics(rowsEmp);
+    const anos=[...new Set(rowsEmp.map(x=>x.ano))].filter(Boolean).sort();
+    const body=anos.map(a=>`<tr>${depCells(a,rowsEmp.filter(x=>x.ano===a))}</tr>`).join('');
+    return `<details class="dep-group" open><summary><span class="arrow">▸</span>${esc(emp)}
+      <span class="chip">${brl0(kEmp.vt)} · ${int(kEmp.itens)} itens</span></summary>
+      <div class="scroll" style="max-height:300px"><table>${depTableHead('Ano')}<tbody>${body}</tbody>
+      <tfoot><tr class="tot">${depCells('Total '+esc(emp),rowsEmp)}</tr></tfoot></table></div></details>`;
+  }).join('');
+}
+function openDep(){
+  const rows=sortedRows();
+  if(!rows.length){ alert('Nenhum registro na seleção atual.'); return; }
+  $('depKpis').innerHTML=depBuildKpiCards(rows);
+  $('depPanelPeriodo').innerHTML=depPanelPeriodo(rows);
+  $('depPanelEmpresa').innerHTML=depPanelEmpresa(rows);
+  $('modalDepSub').textContent='Depreciação linear (vida útil de 10 anos), referência '+dt(REF)+' — '+int(rows.length)+' itens na seleção atual dos filtros';
+  $('depFootNote').textContent=int(rows.length)+' itens · '+brl(rows.reduce((s,x)=>s+x.vt,0));
+  $('modalDep').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+function closeDep(){ $('modalDep').classList.add('hidden'); document.body.style.overflow=''; }
+$('btnDep').onclick=openDep;
+$('modalDepClose').onclick=closeDep;
+$('modalDep').addEventListener('click',e=>{ if(e.target.id==='modalDep') closeDep(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('modalDep').classList.contains('hidden')) closeDep(); });
+document.querySelectorAll('.dep-tab').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.dep-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab=btn.dataset.tab;
+    $('depPanelPeriodo').classList.toggle('hidden',tab!=='periodo');
+    $('depPanelEmpresa').classList.toggle('hidden',tab!=='empresa');
+  };
+});
+
+/* ---------- Exportação em planilha profissional (estilo contábil moderno) ---------- */
+async function depExportXlsx(){
+  const rows=sortedRows();
+  if(!rows.length){ alert('Nenhum registro na seleção atual.'); return; }
+  $('depXls').disabled=true; const lbl0=$('depXls').textContent; $('depXls').textContent='Gerando planilha…';
+  try{
+    const wb=new ExcelJS.Workbook();
+    wb.creator='GRUPO LABMEDIC'; wb.created=new Date();
+    const NAVY='FF1F3864', NAVY2='FF2E5AAC', GOLD='FFC8952B', LIGHT='FFF2F5FB', WHITE='FFFFFFFF',
+      GREY='FF6B7690', TOTBG='FFD9E2F3', BORDER='FFDFE4EE';
+    const moneyFmt='"R$" #,##0.00', pctFmtX='0.0%';
+    const thin={style:'thin',color:{argb:BORDER}};
+
+    function headerRow(ws,rowNum){
+      const row=ws.getRow(rowNum);
+      row.eachCell(c=>{ c.font={bold:true,color:{argb:WHITE},size:10,name:'Arial'};
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};
+        c.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+        c.border={top:thin,bottom:thin,left:thin,right:thin}; });
+      row.height=26;
+    }
+    function totalRow(ws,rowNum){
+      const row=ws.getRow(rowNum);
+      row.eachCell(c=>{ c.font={bold:true,name:'Arial',size:9.5,color:{argb:NAVY}};
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TOTBG}};
+        c.border={top:{style:'double',color:{argb:NAVY}},bottom:thin,left:thin,right:thin}; });
+    }
+    function zebra(ws,startRow,endRow,skipCol0){
+      for(let r=startRow;r<=endRow;r++){
+        if((r-startRow)%2===1){ ws.getRow(r).eachCell(c=>{
+          if(!c.fill||c.fill.fgColor.argb!==TOTBG) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:LIGHT}}; }); }
+      }
+    }
+    function bodyBorders(ws,startRow,endRow){
+      for(let r=startRow;r<=endRow;r++){ ws.getRow(r).eachCell(c=>{ c.border={top:thin,bottom:thin,left:thin,right:thin}; if(!c.font)c.font={name:'Arial',size:9.5}; }); }
+    }
+
+    /* ----- Aba Capa ----- */
+    const k=depMetrics(rows);
+    const wsCapa=wb.addWorksheet('Capa',{properties:{tabColor:{argb:NAVY}}});
+    wsCapa.columns=[{width:34},{width:38}];
+    wsCapa.mergeCells('A1:B1');
+    wsCapa.getCell('A1').value='GRUPO LABMEDIC — RELATÓRIO DE DEPRECIAÇÃO DE EQUIPAMENTOS';
+    wsCapa.getCell('A1').font={bold:true,size:14,color:{argb:WHITE},name:'Arial'};
+    wsCapa.getCell('A1').fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};
+    wsCapa.getCell('A1').alignment={vertical:'middle',horizontal:'left'};
+    wsCapa.getRow(1).height=30;
+    wsCapa.mergeCells('A2:B2');
+    wsCapa.getCell('A2').value='Ativo imobilizado — aquisições identificadas em notas fiscais de entrada';
+    wsCapa.getCell('A2').font={italic:true,size:9.5,color:{argb:GREY},name:'Arial'};
+    const capaRows=[
+      ['Emitido em',new Date().toLocaleString('pt-BR')],
+      ['Data de referência da depreciação',dt(REF)],
+      ['Método',"Linear (quotas constantes) — vida útil de 10 anos (120 meses), sem valor residual"],
+      ['Escopo da seleção',buildEscopo()],
+      ['Itens analisados',int(k.itens)],
+      ['Unidades',int(k.un)],
+      ['Valor de aquisição total',null],
+      ['Depreciação acumulada',null],
+      ['Valor atual do parque',null],
+      ['Depreciação média',null],
+      ['Itens totalmente depreciados',int(k.totalDepreciados)+' de '+int(k.itens)],
+      ['Registros sem data/valor (N/D)',int(k.semDados)]];
+    let rIdx=4;
+    capaRows.forEach(([label,val])=>{
+      const row=wsCapa.getRow(rIdx);
+      row.getCell(1).value=label; row.getCell(1).font={bold:true,size:9.5,color:{argb:NAVY},name:'Arial'};
+      row.getCell(2).value=val; row.getCell(2).font={size:9.5,name:'Arial'};
+      row.getCell(1).border={bottom:thin}; row.getCell(2).border={bottom:thin};
+      rIdx++;
+    });
+    wsCapa.getCell('B10').value=k.vt; wsCapa.getCell('B10').numFmt=moneyFmt;
+    wsCapa.getCell('B11').value=k.dep; wsCapa.getCell('B11').numFmt=moneyFmt;
+    wsCapa.getCell('B12').value=k.at; wsCapa.getCell('B12').numFmt=moneyFmt;
+    wsCapa.getCell('B13').value=k.vt?k.dep/k.vt:0; wsCapa.getCell('B13').numFmt=pctFmtX;
+    wsCapa.getCell('A2').alignment={wrapText:true};
+
+    /* ----- Aba Por Período ----- */
+    const wsPer=wb.addWorksheet('Por Período',{properties:{tabColor:{argb:NAVY2}}});
+    wsPer.columns=[{header:'Ano',width:10},{header:'Mês',width:14},{header:'Itens',width:10},
+      {header:'Unidades',width:11},{header:'Valor de aquisição (R$)',width:20},
+      {header:'Depreciação acumulada (R$)',width:22},{header:'Valor atual (R$)',width:18},{header:'% depreciado',width:13}];
+    headerRow(wsPer,1);
+    let pr=2; const anos=[...new Set(rows.map(x=>x.ano))].filter(Boolean).sort();
+    anos.forEach(a=>{
+      const rowsAno=rows.filter(x=>x.ano===a);
+      const meses=[...new Set(rowsAno.filter(x=>x.mes).map(x=>x.mes))].sort((p,q)=>p-q);
+      const startBlock=pr;
+      meses.forEach(m=>{
+        const rowsM=rowsAno.filter(x=>x.mes===m); const km=depMetrics(rowsM);
+        wsPer.addRow([a,MES[m],km.itens,km.un,km.vt,km.dep,km.at,km.vt?km.dep/km.vt:0]);
+        const row=wsPer.getRow(pr); row.getCell(5).numFmt=moneyFmt; row.getCell(6).numFmt=moneyFmt;
+        row.getCell(7).numFmt=moneyFmt; row.getCell(8).numFmt=pctFmtX; pr++;
+      });
+      const kAno=depMetrics(rowsAno);
+      wsPer.addRow([a,'Total '+a,kAno.itens,kAno.un,kAno.vt,kAno.dep,kAno.at,kAno.vt?kAno.dep/kAno.vt:0]);
+      const trow=wsPer.getRow(pr); trow.getCell(5).numFmt=moneyFmt; trow.getCell(6).numFmt=moneyFmt;
+      trow.getCell(7).numFmt=moneyFmt; trow.getCell(8).numFmt=pctFmtX;
+      totalRow(wsPer,pr); pr++;
+      zebra(wsPer,startBlock,pr-2);
+    });
+    bodyBorders(wsPer,2,pr-1);
+    wsPer.views=[{state:'frozen',ySplit:1}];
+    wsPer.autoFilter={from:{row:1,column:1},to:{row:1,column:8}};
+
+    /* ----- Aba Por Empresa ----- */
+    const wsEmp=wb.addWorksheet('Por Empresa',{properties:{tabColor:{argb:GOLD}}});
+    wsEmp.columns=[{header:'Empresa adquirente',width:22},{header:'Ano',width:10},{header:'Itens',width:10},
+      {header:'Unidades',width:11},{header:'Valor de aquisição (R$)',width:20},
+      {header:'Depreciação acumulada (R$)',width:22},{header:'Valor atual (R$)',width:18},{header:'% depreciado',width:13}];
+    headerRow(wsEmp,1);
+    let pe=2; const emps=[...new Set(rows.map(x=>x.empresa))].filter(Boolean).sort();
+    emps.forEach(emp=>{
+      const rowsEmp=rows.filter(x=>x.empresa===emp);
+      const anosE=[...new Set(rowsEmp.map(x=>x.ano))].filter(Boolean).sort();
+      const startBlock=pe;
+      anosE.forEach(a=>{
+        const rowsA=rowsEmp.filter(x=>x.ano===a); const ka=depMetrics(rowsA);
+        wsEmp.addRow([emp,a,ka.itens,ka.un,ka.vt,ka.dep,ka.at,ka.vt?ka.dep/ka.vt:0]);
+        const row=wsEmp.getRow(pe); row.getCell(5).numFmt=moneyFmt; row.getCell(6).numFmt=moneyFmt;
+        row.getCell(7).numFmt=moneyFmt; row.getCell(8).numFmt=pctFmtX; pe++;
+      });
+      const kEmp=depMetrics(rowsEmp);
+      wsEmp.addRow([emp,'Total',kEmp.itens,kEmp.un,kEmp.vt,kEmp.dep,kEmp.at,kEmp.vt?kEmp.dep/kEmp.vt:0]);
+      const trow=wsEmp.getRow(pe); trow.getCell(5).numFmt=moneyFmt; trow.getCell(6).numFmt=moneyFmt;
+      trow.getCell(7).numFmt=moneyFmt; trow.getCell(8).numFmt=pctFmtX;
+      totalRow(wsEmp,pe); pe++;
+      zebra(wsEmp,startBlock,pe-2);
+    });
+    bodyBorders(wsEmp,2,pe-1);
+    wsEmp.views=[{state:'frozen',ySplit:1}];
+    wsEmp.autoFilter={from:{row:1,column:1},to:{row:1,column:8}};
+
+    /* ----- Aba Detalhado ----- */
+    const wsDet=wb.addWorksheet('Detalhado',{properties:{tabColor:{argb:'FF0F9990'}}});
+    wsDet.columns=[{header:'#',width:6},{header:'Empresa',width:14},{header:'Nº NF',width:10},
+      {header:'Data Emissão',width:13},{header:'Data Entrada',width:13},{header:'Equipamento',width:42},
+      {header:'Nº de Série',width:18},{header:'Fornecedor',width:34},{header:'Qtde.',width:8},
+      {header:'Valor Unitário (R$)',width:16},{header:'Valor Total (R$)',width:16},
+      {header:'Depreciação acumulada (R$)',width:20},{header:'Valor atual (R$)',width:16},
+      {header:'% depreciado',width:12},{header:'Ano',width:8},{header:'Mês',width:8}];
+    headerRow(wsDet,1);
+    const sortedR=sortedRows();
+    sortedR.forEach((x,i)=>{
+      const row=wsDet.addRow([i+1,x.empresa,x.nf,dt(x.dtemi),dt(x.dtent),x.nomeOrig||x.nome,x.serie||'—',
+        x.forn,x.qtd,x.vu,x.vt,x.dep==null?null:x.dep,x.atual==null?null:x.atual,
+        (x.dep==null||!x.vt)?null:x.dep/x.vt,x.ano,x.mes?MES[x.mes]:'']);
+      row.getCell(10).numFmt=moneyFmt; row.getCell(11).numFmt=moneyFmt;
+      row.getCell(12).numFmt=moneyFmt; row.getCell(13).numFmt=moneyFmt; row.getCell(14).numFmt=pctFmtX;
+    });
+    const lastRow=1+sortedR.length;
+    bodyBorders(wsDet,2,lastRow);
+    zebra(wsDet,2,lastRow);
+    const kTot=depMetrics(sortedR);
+    const totR=wsDet.addRow(['','','','','','TOTAL — '+int(sortedR.length)+' itens','','',kTot.un,'',kTot.vt,kTot.dep,kTot.at,kTot.vt?kTot.dep/kTot.vt:0,'','']);
+    totR.getCell(11).numFmt=moneyFmt; totR.getCell(12).numFmt=moneyFmt; totR.getCell(13).numFmt=moneyFmt; totR.getCell(14).numFmt=pctFmtX;
+    totalRow(wsDet,lastRow+1);
+    wsDet.views=[{state:'frozen',ySplit:1}];
+    wsDet.autoFilter={from:{row:1,column:1},to:{row:1,column:16}};
+
+    const buf=await wb.xlsx.writeBuffer();
+    dl(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'GRUPO_LABMEDIC_Depreciacao_Equipamentos.xlsx');
+  }catch(err){ alert('Erro ao gerar a planilha: '+err.message); }
+  finally{ $('depXls').disabled=false; $('depXls').textContent=lbl0; }
+}
+$('depXls').onclick=depExportXlsx;
+
+/* ---------- Relatório PDF de depreciação (estilo contábil, A4 horizontal) ---------- */
+function depGerarPDF(){
+  const rows=sortedRows();
+  if(!rows.length){ alert('Nenhum registro na seleção atual.'); return; }
+  const k=depMetrics(rows);
+  const emissao=new Date().toLocaleString('pt-BR');
+  const escopo=buildEscopo();
+  const anos=[...new Set(rows.map(x=>x.ano))].filter(Boolean).sort();
+  const periodoRows=anos.map(a=>{
+    const rowsAno=rows.filter(x=>x.ano===a);
+    const meses=[...new Set(rowsAno.filter(x=>x.mes).map(x=>x.mes))].sort((p,q)=>p-q);
+    const linhas=meses.map(m=>`<tr>${depCells(MES[m]+'/'+a,rowsAno.filter(x=>x.mes===m))}</tr>`).join('');
+    return linhas+`<tr class="tot">${depCells('Total '+a,rowsAno)}</tr>`;
+  }).join('');
+  const emps=[...new Set(rows.map(x=>x.empresa))].filter(Boolean).sort();
+  const empresaRows=emps.map(emp=>{
+    const rowsEmp=rows.filter(x=>x.empresa===emp);
+    const anosE=[...new Set(rowsEmp.map(x=>x.ano))].filter(Boolean).sort();
+    const linhas=anosE.map(a=>`<tr>${depCells(esc(emp)+' — '+a,rowsEmp.filter(x=>x.ano===a))}</tr>`).join('');
+    return linhas+`<tr class="tot">${depCells('Total '+esc(emp),rowsEmp)}</tr>`;
+  }).join('');
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>GRUPO LABMEDIC — Relatório de depreciação de equipamentos</title>
+<style>
+@page{size:A4 landscape;margin:12mm 10mm 14mm}
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;color:#16233B;font-size:8.6pt;margin:0}
+.hd{display:flex;align-items:center;gap:12px;border-bottom:2.5pt solid #1F3864;padding-bottom:6pt;margin-bottom:8pt}
+.hd .lg{width:34pt;height:34pt;border-radius:6pt;background:#1F3864;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12pt}
+.hd h1{font-size:13pt;margin:0;color:#1F3864;letter-spacing:.3pt}
+.hd .s{font-size:8pt;color:#6B7690;margin-top:2pt}
+.hd .r{margin-left:auto;text-align:right;font-size:7.6pt;color:#6B7690;line-height:1.5}
+.box{border:.6pt solid #DFE4EE;border-radius:4pt;padding:5pt 7pt;margin-bottom:7pt;font-size:7.8pt;background:#FAFBFD}
+.kp{display:flex;flex-wrap:wrap;gap:6pt;margin-bottom:9pt}
+.kp div{flex:1 1 130pt;border:.6pt solid #DFE4EE;border-left:2.5pt solid #2E5496;border-radius:4pt;padding:4pt 6pt}
+.kp b{display:block;font-size:10pt;color:#1F3864;margin-top:1pt}
+.kp span{font-size:6.6pt;text-transform:uppercase;letter-spacing:.4pt;color:#6B7690}
+h2.sec{font-size:9.5pt;color:#1F3864;margin:12pt 0 5pt;letter-spacing:.3pt;border-bottom:1pt solid #DFE4EE;padding-bottom:3pt}
+table{width:100%;border-collapse:collapse;font-size:7.4pt;margin-bottom:4pt}
+thead{display:table-header-group}
+th{background:#1F3864;color:#fff;border:.4pt solid #1F3864;padding:3pt;font-size:7.2pt}
+td{border:.4pt solid #DFE4EE;padding:2.6pt 3pt;vertical-align:top}
+tr{page-break-inside:avoid}
+tbody tr:nth-child(even){background:#F7F9FC}
+.n,.num{text-align:right}.c{text-align:center}
+tr.tot td{background:#D9E2F3;font-weight:bold}
+.lg2{margin-top:8pt;font-size:7.2pt;color:#6B7690;line-height:1.6;border-top:.6pt solid #DFE4EE;padding-top:5pt}
+@media print{.noprint{display:none}}
+</style></head><body>
+<div class="hd"><div class="lg">GL</div>
+<div><h1>GRUPO LABMEDIC — Relatório de depreciação de equipamentos</h1>
+<div class="s">Ativo imobilizado — depreciação linear apurada sobre as aquisições identificadas em notas fiscais de entrada</div></div>
+<div class="r">Emissão: ${esc(emissao)}<br>Data de referência: ${dt(REF)}<br>Registros: ${int(rows.length)}</div></div>
+<div class="box"><b>Escopo da seleção:</b> ${escopo}</div>
+<div class="kp">
+<div><span>Valor de aquisição</span><b>${brl(k.vt)}</b></div>
+<div><span>Depreciação acumulada</span><b>${brl(k.dep)}</b></div>
+<div><span>Valor atual do parque</span><b>${brl(k.at)}</b></div>
+<div><span>Depreciação média</span><b>${pct(k.pctDepMedio)}</b></div>
+<div><span>Idade média</span><b>${(k.idadeMedia?k.idadeMedia.toFixed(1).replace('.',','):'—')} meses</b></div>
+<div><span>Totalmente depreciados</span><b>${int(k.totalDepreciados)} / ${int(k.itens)}</b></div>
+</div>
+<h2 class="sec">Depreciação por período de aquisição (ano / mês)</h2>
+<table><thead><tr><th>Período</th><th>Itens</th><th>Unidades</th><th>Valor de aquisição</th><th>Depreciação acum.</th><th>Valor atual</th><th>% depreciado</th></tr></thead>
+<tbody>${periodoRows}</tbody></table>
+<h2 class="sec">Depreciação por empresa adquirente</h2>
+<table><thead><tr><th>Empresa / Ano</th><th>Itens</th><th>Unidades</th><th>Valor de aquisição</th><th>Depreciação acum.</th><th>Valor atual</th><th>% depreciado</th></tr></thead>
+<tbody>${empresaRows}</tbody>
+<tfoot><tr><td colspan="7"><div style="border-top:.5pt solid #DFE4EE;padding-top:3pt;display:flex"><span>GRUPO LABMEDIC — relatório gerado automaticamente pelo Dashboard de equipamentos adquiridos · uso interno</span><span style="margin-left:auto">${esc(emissao)}</span></div></td></tr></tfoot></table>
+<div class="lg2"><b>Legendas e critérios:</b>
+Depreciação linear (método das quotas constantes), vida útil de <b>10 anos</b> (120 meses) e sem valor residual, conforme prazos admitidos pela legislação fiscal brasileira (IN RFB 1.700/2017, Anexo III — máquinas e equipamentos).
+Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limitada a 100% do valor. Valor atual = valor de aquisição − depreciação acumulada, apurado na data de referência (${dt(REF)}).
+Registros sem data ou sem valor de aquisição são excluídos do cálculo de depreciação (${int(k.semDados)} ${k.semDados===1?'registro':'registros'} nesta seleção). Valores em reais (R$), conforme a NF de origem, sem correção monetária.
+</div>
+<script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
+</body></html>`;
+  const w=window.open('','_blank');
+  if(!w){ alert('Permita pop-ups para gerar o PDF.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+$('depPdf').onclick=depGerarPDF;
+
+/* =========================================================================
+   MÓDULO — IMPOSTOS VS DEPRECIAÇÃO (IRPJ / CSLL / PIS / COFINS)
+   Reaproveita ALL/VIEW/REF/sortedRows/depreciar/meses/brl/pct/int/dt/esc já
+   existentes no dashboard. A depreciação do PERÍODO (despesa, diferente da
+   depreciação ACUMULADA usada no módulo de métricas) é recalculada aqui,
+   item a item, sobre a seleção de filtros atualmente aplicada.
+   ========================================================================= */
+function txPeriodo(){
+  const regime=document.querySelector('input[name="txRegime"]:checked').value;
+  const ano=+$('txAno').value;
+  if(regime==='trimestral'){
+    const t=+$('txTrimestre').value;
+    const iniM=(t-1)*3, fimM=iniM+2;
+    return {ini:new Date(ano,iniM,1),fim:new Date(ano,fimM+1,0),regime,label:'T'+t+'/'+ano,
+      limiteAdicional:60000,mesesPeriodo:3};
+  }
+  return {ini:new Date(ano,0,1),fim:new Date(ano,11,31),regime,label:'Ano '+ano,
+    limiteAdicional:240000,mesesPeriodo:12};
+}
+/* Quota de depreciação DENTRO do período (despesa do período), não a acumulada até REF.
+   Para cada item: soma as quotas mensais (vt/120) referentes aos meses do período em que
+   o bem já estava em depreciação (dentro dos 120 meses de vida útil a partir da base). */
+function depNoPeriodoItem(x,ini,fim){
+  const base=x.dtemi||x.dtent; if(!base||!(x.vt>0)) return 0;
+  const mIni=Math.max(0,meses(base,ini));       // meses decorridos até o início do período
+  const mFim=Math.max(0,meses(base,fim)+1);     // meses decorridos até o fim do período (inclusive)
+  const de=Math.min(VIDA_MESES,mIni), ate=Math.min(VIDA_MESES,mFim);
+  const quotas=Math.max(0,ate-de);
+  return x.vt/VIDA_MESES*quotas;
+}
+function txRowsFonte(){ return sortedRows(); } // respeita os filtros atualmente aplicados no dashboard
+function txDepPeriodoAuto(){
+  const p=txPeriodo(), rows=txRowsFonte();
+  const total=rows.reduce((s,x)=>s+depNoPeriodoItem(x,p.ini,p.fim),0);
+  return {total,periodo:p,itens:rows.length};
+}
+function txAtualizarAuto(){
+  const a=txDepPeriodoAuto();
+  $('txDep').value=(Math.round(a.total*100)/100)||0;
+  $('txLimAdic').value=a.periodo.limiteAdicional;
+  $('txDepAuto').textContent='Calculado automaticamente sobre '+int(a.itens)+' itens da seleção atual de filtros, referente a '+a.periodo.label+'. Você pode sobrescrever o valor acima.';
+}
+function txBuildAnoSelect(){
+  const anos=[...new Set(ALL.map(x=>x.ano))].filter(Boolean).sort();
+  const hoje=new Date().getFullYear();
+  const lista=anos.length?anos:[hoje];
+  $('txAno').innerHTML=lista.map(a=>`<option value="${a}"${a===lista[lista.length-1]?' selected':''}>${a}</option>`).join('');
+}
+document.querySelectorAll('input[name="txRegime"]').forEach(r=>r.onchange=()=>{
+  $('boxTrimestre').style.display=document.querySelector('input[name="txRegime"]:checked').value==='trimestral'?'':'none';
+  txAtualizarAuto();
+});
+document.querySelectorAll('input[name="txPisReg"]').forEach(r=>r.onchange=()=>{
+  const nc=document.querySelector('input[name="txPisReg"]:checked').value==='nc';
+  $('txAliqPis').value=nc?'1.65':'0.65'; $('txAliqCofins').value=nc?'7.6':'3.00';
+});
+$('txAno').addEventListener('change',txAtualizarAuto);
+$('txTrimestre').addEventListener('change',txAtualizarAuto);
+
+let TX_RESULT=null;
+function txCalcular(){
+  const p=txPeriodo();
+  const dep=(+$('txDep').value||0)*(Math.max(0,Math.min(100,+$('txPctDed').value||0))/100);
+  const lucro=+$('txLucro').value||0;
+  const aIrpj=(+$('txAliqIrpj').value||0)/100, aAdic=(+$('txAliqAdic').value||0)/100,
+    limAdic=+$('txLimAdic').value||0, aCsll=(+$('txAliqCsll').value||0)/100;
+  const receitaPC=+$('txReceitaPC').value||0, aPis=(+$('txAliqPis').value||0)/100,
+    aCofins=(+$('txAliqCofins').value||0)/100, credito=+$('txCredito').value||0;
+
+  const baseComDep=Math.max(0,lucro-dep);
+  const irpj15Com=baseComDep*aIrpj, adicComBase=Math.max(0,baseComDep-limAdic), adicCom=adicComBase*aAdic;
+  const irpjTotalCom=irpj15Com+adicCom, csllCom=baseComDep*aCsll, totalCom=irpjTotalCom+csllCom;
+
+  const irpj15Sem=lucro*aIrpj, adicSemBase=Math.max(0,lucro-limAdic), adicSem=adicSemBase*aAdic;
+  const irpjTotalSem=irpj15Sem+adicSem, csllSem=lucro*aCsll, totalSem=irpjTotalSem+csllSem;
+
+  const economiaIrpj=irpjTotalSem-irpjTotalCom, economiaCsll=csllSem-csllCom, economiaTotal=totalSem-totalCom;
+
+  const pisBruto=receitaPC*aPis, cofinsBruto=receitaPC*aCofins, debitoBruto=pisBruto+cofinsBruto,
+    liquidoPC=Math.max(0,debitoBruto-credito);
+
+  TX_RESULT={p,dep,lucro,aIrpj,aAdic,limAdic,aCsll,receitaPC,aPis,aCofins,credito,
+    baseComDep,irpj15Com,adicComBase,adicCom,irpjTotalCom,csllCom,totalCom,
+    irpj15Sem,adicSemBase,adicSem,irpjTotalSem,csllSem,totalSem,
+    economiaIrpj,economiaCsll,economiaTotal,pisBruto,cofinsBruto,debitoBruto,liquidoPC};
+  return TX_RESULT;
+}
+function txRenderKpis(r){
+  const cards=[
+    ['Depreciação dedutível considerada',brl(r.dep),r.p.label,'k1'],
+    ['Base tributável (com depreciação)',brl(r.baseComDep),'IRPJ/CSLL','k1'],
+    ['IRPJ + CSLL — com depreciação',brl(r.totalCom),'IRPJ '+brl(r.irpjTotalCom)+' · CSLL '+brl(r.csllCom),'k2'],
+    ['IRPJ + CSLL — sem depreciação',brl(r.totalSem),'comparativo hipotético','k3'],
+    ['Economia tributária no período',brl(r.economiaTotal),'IRPJ '+brl(r.economiaIrpj)+' · CSLL '+brl(r.economiaCsll),'pos'],
+    ['PIS/COFINS líquido do período',brl(r.liquidoPC),(r.credito>0?'após crédito sobre imobilizado':'sem crédito informado'),'k2']];
+  $('txKpis').innerHTML=cards.map(([l,v,s,c])=>`<div class="tax-kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+}
+function txRenderTabelas(r){
+  $('txTabIrpj').innerHTML=`<thead><tr><th>Cenário</th><th>Base tributável</th><th>IRPJ 15%</th><th>Adicional IRPJ 10%</th><th>IRPJ total</th><th>CSLL</th><th>IRPJ + CSLL</th></tr></thead>
+    <tbody>
+      <tr><td>Sem depreciação dedutível</td><td class="num">${brl(r.lucro)}</td><td class="num">${brl(r.irpj15Sem)}</td><td class="num">${brl(r.adicSem)}</td><td class="num">${brl(r.irpjTotalSem)}</td><td class="num">${brl(r.csllSem)}</td><td class="num">${brl(r.totalSem)}</td></tr>
+      <tr><td>Com depreciação dedutível</td><td class="num">${brl(r.baseComDep)}</td><td class="num">${brl(r.irpj15Com)}</td><td class="num">${brl(r.adicCom)}</td><td class="num">${brl(r.irpjTotalCom)}</td><td class="num">${brl(r.csllCom)}</td><td class="num">${brl(r.totalCom)}</td></tr>
+    </tbody>
+    <tfoot><tr class="tot"><td>Economia gerada pela depreciação</td><td class="num">${brl(r.dep)}</td><td class="num">—</td><td class="num">—</td><td class="num">${brl(r.economiaIrpj)}</td><td class="num">${brl(r.economiaCsll)}</td><td class="num">${brl(r.economiaTotal)}</td></tr></tfoot>`;
+  $('txTabPc').innerHTML=`<thead><tr><th>Item</th><th>Base</th><th>Alíquota</th><th>Valor</th></tr></thead>
+    <tbody>
+      <tr><td>PIS</td><td class="num">${brl(r.receitaPC)}</td><td class="num">${pct(r.aPis*100)}</td><td class="num">${brl(r.pisBruto)}</td></tr>
+      <tr><td>COFINS</td><td class="num">${brl(r.receitaPC)}</td><td class="num">${pct(r.aCofins*100)}</td><td class="num">${brl(r.cofinsBruto)}</td></tr>
+      <tr><td>Débito bruto PIS + COFINS</td><td></td><td></td><td class="num">${brl(r.debitoBruto)}</td></tr>
+      <tr><td>(-) Crédito sobre imobilizado</td><td></td><td></td><td class="num">${brl(r.credito)}</td></tr>
+    </tbody>
+    <tfoot><tr class="tot"><td colspan="3">PIS/COFINS líquido do período</td><td class="num">${brl(r.liquidoPC)}</td></tr></tfoot>`;
+}
+$('txCalcBtn').onclick=()=>{
+  if(!(+$('txLucro').value>0)){ alert('Informe o lucro contábil antes de IRPJ/CSLL do período.'); return; }
+  const r=txCalcular();
+  txRenderKpis(r); txRenderTabelas(r);
+  $('txResultado').classList.remove('hidden');
+  $('txXls').disabled=false; $('txPdf').disabled=false;
+  $('txFootNote').textContent=r.p.label+' · depreciação dedutível '+brl(r.dep)+' · economia total '+brl(r.economiaTotal);
+};
+function openTax(){
+  txBuildAnoSelect(); txAtualizarAuto();
+  $('txResultado').classList.add('hidden'); $('txXls').disabled=true; $('txPdf').disabled=true;
+  $('txFootNote').textContent='Preencha as premissas e clique em "Calcular".';
+  $('modalTax').classList.remove('hidden'); document.body.style.overflow='hidden';
+}
+function closeTax(){ $('modalTax').classList.add('hidden'); document.body.style.overflow=''; }
+$('btnTax').onclick=openTax;
+$('modalTaxClose').onclick=closeTax;
+$('modalTax').addEventListener('click',e=>{ if(e.target.id==='modalTax') closeTax(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('modalTax').classList.contains('hidden')) closeTax(); });
+
+/* ---------- Exportação da memória de cálculo em planilha profissional ---------- */
+async function txExportXlsx(){
+  if(!TX_RESULT){ alert('Calcule antes de exportar.'); return; }
+  const r=TX_RESULT;
+  $('txXls').disabled=true; const lbl0=$('txXls').textContent; $('txXls').textContent='Gerando planilha…';
+  try{
+    const wb=new ExcelJS.Workbook();
+    wb.creator='GRUPO LABMEDIC'; wb.created=new Date();
+    const NAVY='FF1F3864', GOLD='FFC8952B', LIGHT='FFF2F5FB', WHITE='FFFFFFFF', GREY='FF6B7690',
+      TOTBG='FFD9E2F3', BORDER='FFDFE4EE', moneyFmt='"R$" #,##0.00', pctFmtX='0.00%', thin={style:'thin',color:{argb:BORDER}};
+    function headerRow(ws,rn){ const row=ws.getRow(rn); row.eachCell(c=>{c.font={bold:true,color:{argb:WHITE},size:10,name:'Arial'};
+      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}}; c.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+      c.border={top:thin,bottom:thin,left:thin,right:thin};}); row.height=24; }
+    function totalRow(ws,rn){ const row=ws.getRow(rn); row.eachCell(c=>{c.font={bold:true,name:'Arial',size:9.5,color:{argb:NAVY}};
+      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TOTBG}}; c.border={top:{style:'double',color:{argb:NAVY}},bottom:thin,left:thin,right:thin};}); }
+    function bodyBorders(ws,s,e){ for(let r2=s;r2<=e;r2++){ ws.getRow(r2).eachCell(c=>{c.border={top:thin,bottom:thin,left:thin,right:thin}; if(!c.font)c.font={name:'Arial',size:9.5};}); } }
+
+    const wsCapa=wb.addWorksheet('Capa',{properties:{tabColor:{argb:NAVY}}});
+    wsCapa.columns=[{width:38},{width:34}];
+    wsCapa.mergeCells('A1:B1'); wsCapa.getCell('A1').value='GRUPO LABMEDIC — MEMÓRIA DE CÁLCULO: IMPOSTOS VS. DEPRECIAÇÃO';
+    wsCapa.getCell('A1').font={bold:true,size:13,color:{argb:WHITE},name:'Arial'};
+    wsCapa.getCell('A1').fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};
+    wsCapa.getCell('A1').alignment={vertical:'middle',horizontal:'left'}; wsCapa.getRow(1).height=28;
+    wsCapa.mergeCells('A2:B2'); wsCapa.getCell('A2').value='IRPJ, CSLL, PIS e COFINS — regime de lucro real — modelo demonstrativo, não substitui a apuração oficial da contabilidade';
+    wsCapa.getCell('A2').font={italic:true,size:9,color:{argb:GREY},name:'Arial'}; wsCapa.getCell('A2').alignment={wrapText:true};
+    const capaRows=[['Emitido em',new Date().toLocaleString('pt-BR')],['Período de apuração',r.p.label],
+      ['Regime',r.p.regime==='trimestral'?'Lucro real trimestral':'Lucro real anual'],
+      ['Escopo da seleção de equipamentos',buildEscopo()],['Depreciação dedutível considerada',null],
+      ['Lucro contábil antes de IRPJ/CSLL',null],['Alíquota IRPJ / adicional',pct(r.aIrpj*100)+' / '+pct(r.aAdic*100)],
+      ['Limite do adicional no período',null],['Alíquota CSLL',pct(r.aCsll*100)],
+      ['Regime PIS/COFINS',document.querySelector('input[name="txPisReg"]:checked').value==='nc'?'Não cumulativo':'Cumulativo']];
+    let ri=4; capaRows.forEach(([l,v])=>{ const row=wsCapa.getRow(ri);
+      row.getCell(1).value=l; row.getCell(1).font={bold:true,size:9.5,color:{argb:NAVY},name:'Arial'};
+      row.getCell(2).value=v; row.getCell(2).font={size:9.5,name:'Arial'};
+      row.getCell(1).border={bottom:thin}; row.getCell(2).border={bottom:thin}; ri++; });
+    wsCapa.getCell('B8').value=r.dep; wsCapa.getCell('B8').numFmt=moneyFmt;
+    wsCapa.getCell('B9').value=r.lucro; wsCapa.getCell('B9').numFmt=moneyFmt;
+    wsCapa.getCell('B11').value=r.limAdic; wsCapa.getCell('B11').numFmt=moneyFmt;
+
+    const wsIrpj=wb.addWorksheet('IRPJ e CSLL',{properties:{tabColor:{argb:GOLD}}});
+    wsIrpj.columns=[{header:'Cenário',width:30},{header:'Base tributável',width:18},{header:'IRPJ 15%',width:16},
+      {header:'Adicional IRPJ 10%',width:18},{header:'IRPJ total',width:16},{header:'CSLL',width:16},{header:'IRPJ + CSLL',width:16}];
+    headerRow(wsIrpj,1);
+    wsIrpj.addRow(['Sem depreciação dedutível',r.lucro,r.irpj15Sem,r.adicSem,r.irpjTotalSem,r.csllSem,r.totalSem]);
+    wsIrpj.addRow(['Com depreciação dedutível',r.baseComDep,r.irpj15Com,r.adicCom,r.irpjTotalCom,r.csllCom,r.totalCom]);
+    [2,3].forEach(rn=>{ for(let c=2;c<=7;c++) wsIrpj.getRow(rn).getCell(c).numFmt=moneyFmt; });
+    bodyBorders(wsIrpj,2,3);
+    wsIrpj.addRow(['Economia gerada pela depreciação',r.dep,'—','—',r.economiaIrpj,r.economiaCsll,r.economiaTotal]);
+    [2,5,6,7].forEach(c=>wsIrpj.getRow(4).getCell(c).numFmt=moneyFmt);
+    totalRow(wsIrpj,4);
+
+    const wsPc=wb.addWorksheet('PIS e COFINS',{properties:{tabColor:{argb:'FF0F9990'}}});
+    wsPc.columns=[{header:'Item',width:32},{header:'Base',width:18},{header:'Alíquota',width:12},{header:'Valor',width:16}];
+    headerRow(wsPc,1);
+    wsPc.addRow(['PIS',r.receitaPC,r.aPis,r.pisBruto]);
+    wsPc.addRow(['COFINS',r.receitaPC,r.aCofins,r.cofinsBruto]);
+    wsPc.addRow(['Débito bruto PIS + COFINS',null,null,r.debitoBruto]);
+    wsPc.addRow(['(-) Crédito sobre imobilizado',null,null,r.credito]);
+    [2,3,4,5].forEach(rn=>{ const row=wsPc.getRow(rn); row.getCell(2).numFmt=moneyFmt; row.getCell(3).numFmt='0.00%'; row.getCell(4).numFmt=moneyFmt; });
+    bodyBorders(wsPc,2,5);
+    wsPc.addRow(['PIS/COFINS líquido do período',null,null,r.liquidoPC]);
+    wsPc.getRow(6).getCell(4).numFmt=moneyFmt; totalRow(wsPc,6);
+
+    const buf=await wb.xlsx.writeBuffer();
+    dl(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'GRUPO_LABMEDIC_Memoria_Calculo_Impostos_Depreciacao.xlsx');
+  }catch(err){ alert('Erro ao gerar a planilha: '+err.message); }
+  finally{ $('txXls').disabled=false; $('txXls').textContent=lbl0; }
+}
+$('txXls').onclick=txExportXlsx;
+
+/* ---------- Memória de cálculo em PDF (estilo contábil, A4 vertical) ---------- */
+function txGerarPDF(){
+  if(!TX_RESULT){ alert('Calcule antes de gerar o PDF.'); return; }
+  const r=TX_RESULT, emissao=new Date().toLocaleString('pt-BR'), escopo=buildEscopo();
+  const regimePC=document.querySelector('input[name="txPisReg"]:checked').value==='nc'?'Não cumulativo':'Cumulativo';
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>GRUPO LABMEDIC — Memória de cálculo: impostos vs. depreciação</title>
+<style>
+@page{size:A4 portrait;margin:14mm 14mm 16mm}
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;color:#16233B;font-size:9pt;margin:0}
+.hd{display:flex;align-items:center;gap:12px;border-bottom:2.5pt solid #1F3864;padding-bottom:6pt;margin-bottom:9pt}
+.hd .lg{width:34pt;height:34pt;border-radius:6pt;background:#1F3864;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12pt}
+.hd h1{font-size:13pt;margin:0;color:#1F3864;letter-spacing:.3pt}
+.hd .s{font-size:8pt;color:#6B7690;margin-top:2pt}
+.hd .r{margin-left:auto;text-align:right;font-size:7.6pt;color:#6B7690;line-height:1.5}
+.box{border:.6pt solid #DFE4EE;border-radius:4pt;padding:6pt 8pt;margin-bottom:9pt;font-size:8pt;background:#FAFBFD}
+.warn{border-left:2.5pt solid #C8952B}
+.kp{display:flex;flex-wrap:wrap;gap:6pt;margin-bottom:11pt}
+.kp div{flex:1 1 150pt;border:.6pt solid #DFE4EE;border-left:2.5pt solid #2E5496;border-radius:4pt;padding:5pt 7pt}
+.kp b{display:block;font-size:11pt;color:#1F3864;margin-top:1pt}
+.kp span{font-size:6.8pt;text-transform:uppercase;letter-spacing:.4pt;color:#6B7690}
+h2.sec{font-size:10pt;color:#1F3864;margin:13pt 0 6pt;letter-spacing:.3pt;border-bottom:1pt solid #DFE4EE;padding-bottom:3pt}
+table{width:100%;border-collapse:collapse;font-size:8pt;margin-bottom:5pt}
+th{background:#1F3864;color:#fff;border:.4pt solid #1F3864;padding:3.5pt;font-size:7.6pt}
+td{border:.4pt solid #DFE4EE;padding:3pt 3.5pt;vertical-align:top}
+.num{text-align:right}.c{text-align:center}
+tr.tot td{background:#D9E2F3;font-weight:bold}
+.lg2{margin-top:10pt;font-size:7.4pt;color:#6B7690;line-height:1.65;border-top:.6pt solid #DFE4EE;padding-top:6pt}
+.assin{margin-top:26pt;display:flex;gap:24pt}
+.assin div{flex:1;text-align:center;border-top:.6pt solid #6B7690;padding-top:4pt;font-size:7.6pt;color:#6B7690}
+@media print{.noprint{display:none}}
+</style></head><body>
+<div class="hd"><div class="lg">GL</div>
+<div><h1>GRUPO LABMEDIC — Memória de cálculo: impostos vs. depreciação</h1>
+<div class="s">IRPJ, CSLL, PIS e COFINS apurados sobre a depreciação dedutível do parque de equipamentos — regime de lucro real</div></div>
+<div class="r">Emissão: ${esc(emissao)}<br>Período: ${esc(r.p.label)}<br>Regime: ${r.p.regime==='trimestral'?'Trimestral':'Anual'}</div></div>
+<div class="box warn"><b>Modelo demonstrativo de apoio gerencial</b> — não substitui a apuração oficial da contabilidade (LALUR/LACS, ajustes fiscais adicionais e documentação de suporte). Consulte o contador/advogado tributário responsável.</div>
+<div class="box"><b>Escopo dos equipamentos considerados:</b> ${escopo}</div>
+<div class="kp">
+<div><span>Depreciação dedutível do período</span><b>${brl(r.dep)}</b></div>
+<div><span>Lucro contábil antes de IRPJ/CSLL</span><b>${brl(r.lucro)}</b></div>
+<div><span>Base tributável (com depreciação)</span><b>${brl(r.baseComDep)}</b></div>
+<div><span>IRPJ + CSLL — com depreciação</span><b>${brl(r.totalCom)}</b></div>
+<div><span>Economia tributária no período</span><b>${brl(r.economiaTotal)}</b></div>
+<div><span>PIS/COFINS líquido do período</span><b>${brl(r.liquidoPC)}</b></div>
+</div>
+<h2 class="sec">1) Apuração de IRPJ e CSLL — comparativo com e sem a depreciação dedutível</h2>
+<table><thead><tr><th>Cenário</th><th>Base tributável</th><th>IRPJ 15%</th><th>Adicional IRPJ 10%</th><th>IRPJ total</th><th>CSLL</th><th>IRPJ + CSLL</th></tr></thead>
+<tbody>
+<tr><td>Sem depreciação dedutível</td><td class="num">${brl(r.lucro)}</td><td class="num">${brl(r.irpj15Sem)}</td><td class="num">${brl(r.adicSem)}</td><td class="num">${brl(r.irpjTotalSem)}</td><td class="num">${brl(r.csllSem)}</td><td class="num">${brl(r.totalSem)}</td></tr>
+<tr><td>Com depreciação dedutível</td><td class="num">${brl(r.baseComDep)}</td><td class="num">${brl(r.irpj15Com)}</td><td class="num">${brl(r.adicCom)}</td><td class="num">${brl(r.irpjTotalCom)}</td><td class="num">${brl(r.csllCom)}</td><td class="num">${brl(r.totalCom)}</td></tr>
+</tbody>
+<tfoot><tr class="tot"><td>Economia gerada pela depreciação</td><td class="num">${brl(r.dep)}</td><td class="num">—</td><td class="num">—</td><td class="num">${brl(r.economiaIrpj)}</td><td class="num">${brl(r.economiaCsll)}</td><td class="num">${brl(r.economiaTotal)}</td></tr></tfoot></table>
+
+<h2 class="sec">2) PIS/COFINS sobre a receita do período (regime ${esc(regimePC)})</h2>
+<table><thead><tr><th>Item</th><th>Base</th><th>Alíquota</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td>PIS</td><td class="num">${brl(r.receitaPC)}</td><td class="num">${pct(r.aPis*100)}</td><td class="num">${brl(r.pisBruto)}</td></tr>
+<tr><td>COFINS</td><td class="num">${brl(r.receitaPC)}</td><td class="num">${pct(r.aCofins*100)}</td><td class="num">${brl(r.cofinsBruto)}</td></tr>
+<tr><td>Débito bruto PIS + COFINS</td><td></td><td></td><td class="num">${brl(r.debitoBruto)}</td></tr>
+<tr><td>(-) Crédito sobre imobilizado</td><td></td><td></td><td class="num">${brl(r.credito)}</td></tr>
+</tbody>
+<tfoot><tr class="tot"><td colspan="3">PIS/COFINS líquido do período</td><td class="num">${brl(r.liquidoPC)}</td></tr></tfoot></table>
+
+<div class="lg2"><b>Base de referência e critérios adotados:</b>
+Depreciação apurada pelo método linear (quotas constantes), vida útil de 10 anos (120 meses), sem valor residual, sobre o valor de aquisição identificado nas notas fiscais de entrada (IN RFB 1.700/2017, Anexo III — máquinas e equipamentos). A depreciação dedutível considerada neste demonstrativo é a <b>despesa apurada dentro do período</b> selecionado (e não o saldo acumulado até a data de referência do dashboard), aplicada ao percentual de dedutibilidade informado pelo usuário como proxy do nexo com a atividade-fim (bens em comodato/locação usuais e necessários à operação, uso interno de apoio operacional etc.).
+IRPJ apurado a 15% sobre a base ajustada, com adicional de 10% sobre a parcela que exceder o limite do período (Lei nº 9.430/1996, arts. 2º e 3º). CSLL apurada sobre a mesma base ajustada, à alíquota informada (regra geral de 9% para a generalidade das pessoas jurídicas, Lei nº 9.249/1995). PIS e COFINS incidem sobre a receita bruta do período e <b>não são reduzidos diretamente pela depreciação</b>; eventual crédito sobre bens do ativo imobilizado no regime não cumulativo (Leis nº 10.637/2002 e 10.833/2003) foi informado manualmente pelo usuário.
+Este demonstrativo não considera outros ajustes do LALUR/LACS (adições/exclusões diversas), compensação de prejuízos fiscais, incentivos fiscais específicos ou peculiaridades contratuais de cada operação de comodato/locação, que devem ser avaliados pela contabilidade/assessoria tributária da empresa.
+</div>
+<div class="assin"><div>Elaborado por</div><div>Revisado pela contabilidade</div><div>Aprovado pela diretoria</div></div>
+<script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
+</body></html>`;
+  const w=window.open('','_blank');
+  if(!w){ alert('Permita pop-ups para gerar o PDF.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+$('txPdf').onclick=txGerarPDF;
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+</body>
+</html>
