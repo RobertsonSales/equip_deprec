@@ -579,7 +579,27 @@ html[data-theme="dark"] .tax-sec>h3{color:var(--gold2)}
 @media(max-width:900px){.tax-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.tax-grid{grid-template-columns:1fr}}
 .tax-grid .full{grid-column:1/-1}
-.tax-grid label.f{display:block}
+/* Variantes com número de colunas dedicado, para que cada seção preencha a largura
+   de forma equilibrada em vez de deixar colunas vazias quando há menos campos */
+.tax-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.tax-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px}
+@media(max-width:700px){.tax-grid-2,.tax-grid-3{grid-template-columns:1fr}}
+/* Linha de campos curtos (selects) que não precisam ocupar a largura toda do modal */
+.tax-row-narrow{display:flex;gap:16px;flex-wrap:wrap}
+.tax-row-narrow>div{flex:1 1 220px;max-width:280px}
+@media(max-width:560px){.tax-row-narrow>div{max-width:none}}
+/* Todo label dentro de um grid do formulário reserva a mesma altura (até 2 linhas) e
+   ancora o texto na base dessa área — assim os campos da mesma linha começam sempre
+   na mesma altura, mesmo quando o texto do rótulo varia de 1 para 2 linhas. */
+.tax-grid label.f,.tax-grid-2 label.f,.tax-grid-3 label.f,.tax-row-narrow label.f{
+  display:flex;align-items:flex-end;width:100%;min-height:26px;line-height:1.3}
+.tax-grid>div,.tax-grid-2>div,.tax-grid-3>div,.tax-row-narrow>div{display:flex;flex-direction:column}
+/* Sufixo "%" embutido nos campos percentuais, alinhado ao valor (que passa a ficar à
+   direita, como nos campos monetários), em vez de um texto solto abaixo do input */
+.pct-field{position:relative}
+.pct-field input{padding-right:26px;text-align:right}
+.pct-field .pct-suffix{position:absolute;right:11px;top:50%;transform:translateY(-50%);
+  font-size:11.5px;font-weight:700;color:var(--mut);pointer-events:none}
 .tax-radio{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:8px 0}
 .tax-radio label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--txt2);cursor:pointer}
 .tax-radio input{accent-color:var(--navy2)}
@@ -890,7 +910,7 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
           <label><input type="radio" name="txRegime" value="trimestral" checked> Lucro real trimestral</label>
           <label><input type="radio" name="txRegime" value="anual"> Lucro real anual (estimativa/balanço anual)</label>
         </div>
-        <div class="tax-grid">
+        <div class="tax-row-narrow">
           <div><label class="f">Ano de apuração</label><select id="txAno"></select></div>
           <div id="boxTrimestre"><label class="f">Trimestre</label>
             <select id="txTrimestre">
@@ -905,7 +925,7 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
 
       <div class="tax-sec">
         <h3>② Depreciação dedutível do período (apurada a partir do parque de equipamentos)</h3>
-        <div class="tax-grid">
+        <div class="tax-grid-2">
           <div>
             <label class="f">Depreciação do período (R$)</label>
             <input type="text" inputmode="decimal" class="money-in" id="txDep" placeholder="R$ 0,00">
@@ -913,7 +933,7 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
           </div>
           <div>
             <label class="f">% dedutível considerado (nexo com a atividade-fim)</label>
-            <input type="number" id="txPctDed" value="100" min="0" max="100" step="1">
+            <div class="pct-field"><input type="number" id="txPctDed" value="100" min="0" max="100" step="1"><span class="pct-suffix">%</span></div>
             <div class="note" style="margin-top:4px">Ajuste para excluir itens sem nexo com a atividade-fim (uso alheio à operação), conforme critério contábil da empresa. Comodato/locação usuais e necessários à atividade costumam manter 100%.</div>
           </div>
         </div>
@@ -921,12 +941,14 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
 
       <div class="tax-sec">
         <h3>③ Premissas contábeis do período (informar manualmente)</h3>
-        <div class="tax-grid">
+        <div class="tax-grid-2">
           <div><label class="f">Lucro contábil antes de IRPJ/CSLL (R$)</label><input type="text" inputmode="decimal" class="money-in" id="txLucro" placeholder="ex.: R$ 1.200.000,00"></div>
-          <div><label class="f">Alíquota IRPJ</label><input type="number" id="txAliqIrpj" value="15" step="0.01"></div>
-          <div><label class="f">Alíquota adicional IRPJ</label><input type="number" id="txAliqAdic" value="10" step="0.01"></div>
           <div><label class="f">Limite do adicional no período (R$)</label><input type="text" inputmode="decimal" class="money-in" id="txLimAdic" placeholder="R$ 0,00"></div>
-          <div><label class="f">Alíquota CSLL</label><input type="number" id="txAliqCsll" value="9" step="0.01"></div>
+        </div>
+        <div class="tax-grid-3" style="margin-top:12px">
+          <div><label class="f">Alíquota IRPJ</label><div class="pct-field"><input type="number" id="txAliqIrpj" value="15" step="0.01"><span class="pct-suffix">%</span></div></div>
+          <div><label class="f">Alíquota adicional IRPJ</label><div class="pct-field"><input type="number" id="txAliqAdic" value="10" step="0.01"><span class="pct-suffix">%</span></div></div>
+          <div><label class="f">Alíquota CSLL</label><div class="pct-field"><input type="number" id="txAliqCsll" value="9" step="0.01"><span class="pct-suffix">%</span></div></div>
         </div>
       </div>
 
@@ -938,8 +960,8 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
             <label><input type="radio" name="txPisReg" value="cum"> Regime cumulativo (0,65% / 3,00%)</label>
           </div>
           <div><label class="f">Receita bruta tributável no período (R$)</label><input type="text" inputmode="decimal" class="money-in" id="txReceitaPC" placeholder="ex.: R$ 6.000.000,00"></div>
-          <div><label class="f">Alíquota PIS</label><input type="number" id="txAliqPis" value="1.65" step="0.01"></div>
-          <div><label class="f">Alíquota COFINS</label><input type="number" id="txAliqCofins" value="7.6" step="0.01"></div>
+          <div><label class="f">Alíquota PIS</label><div class="pct-field"><input type="number" id="txAliqPis" value="1.65" step="0.01"><span class="pct-suffix">%</span></div></div>
+          <div><label class="f">Alíquota COFINS</label><div class="pct-field"><input type="number" id="txAliqCofins" value="7.6" step="0.01"><span class="pct-suffix">%</span></div></div>
           <div><label class="f">Crédito de PIS/COFINS sobre imobilizado no período (R$)</label><input type="text" inputmode="decimal" class="money-in" id="txCredito" value="R$ 0,00">
             <div class="note" style="margin-top:4px">Informe apenas se a empresa apurar crédito sobre bens do ativo imobilizado conforme as hipóteses legais do regime não cumulativo (Leis 10.637/2002 e 10.833/2003).</div>
           </div>
