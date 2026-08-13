@@ -146,6 +146,15 @@ html[data-theme="dark"] .card>h2::before{background:linear-gradient(180deg,var(-
   animation:shimmer 1.4s linear infinite;background-size:200% 100%}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .progress-step{margin-top:6px;font-size:11.5px;color:var(--txt2);line-height:1.5}
+/* Overlay central do progresso — exibido entre a barra de título e o quadro de filtros,
+   cobrindo o centro da aplicação enquanto durar o processamento */
+.progress-wrap.progress-overlay{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(560px,92vw);margin-top:0;z-index:9999;
+  background:var(--panel);border:1px solid var(--bd);border-radius:16px;
+  padding:22px 26px;box-shadow:0 24px 64px rgba(8,18,40,.35)}
+.progress-wrap.progress-overlay .progress-bar{height:14px}
+/* Inputs monetários com máscara pt-BR */
+.money-in{text-align:right;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace}
 .progress-step .dot{display:inline-block;width:7px;height:7px;background:var(--navy2);border-radius:50%;
   margin-right:6px;animation:pulse 1.1s ease-in-out infinite;vertical-align:middle}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.4}}
@@ -331,7 +340,7 @@ html[data-theme="dark"] .info-card{border-color:rgba(255,255,255,.10);box-shadow
 html[data-theme="dark"] .info-card h3{color:#fff}
 .feature{display:flex;gap:12px}
 .feature>div{position:relative;z-index:1}
-.feature-primary{grid-column:span 2;background:linear-gradient(135deg,rgba(46,90,172,.14),rgba(46,90,172,.04) 58%,rgba(228,178,74,.12));border-color:rgba(46,90,172,.22)}
+.feature-primary{background:linear-gradient(135deg,rgba(46,90,172,.14),rgba(46,90,172,.04) 58%,rgba(228,178,74,.12));border-color:rgba(46,90,172,.22)}
 html[data-theme="dark"] .feature-primary{background:linear-gradient(135deg,rgba(110,155,240,.16),rgba(110,155,240,.05) 58%,rgba(228,178,74,.10));border-color:rgba(110,155,240,.22)}
 .info-icon{width:42px;height:42px;display:grid;place-items:center;flex-shrink:0;border-radius:14px;font-size:20px;
   background:linear-gradient(135deg,var(--navy2),var(--navy3));color:#fff;box-shadow:0 10px 18px -10px rgba(46,90,172,.8);position:relative;z-index:1}
@@ -374,7 +383,7 @@ html[data-theme="dark"] .checklist-card .card-motif{color:var(--gold2)}
   .hero-overlay{left:18px;right:18px;bottom:22px;max-width:none}
   .hero-overlay strong{font-size:22px}
   .loader-info-grid{grid-template-columns:1fr}
-  .feature-primary,.quote-card{grid-column:span 1}
+  .quote-card{grid-column:span 1}
 }
 @media(max-width:560px){
   header{padding:16px 18px}
@@ -476,40 +485,81 @@ html[data-theme="dark"] h2.collapsible:hover .collapse-ico{box-shadow:0 0 0 3px 
   display:flex;align-items:center;justify-content:center;overflow:visible;
   transition:all .15s;flex-shrink:0}
 .modal-close:hover{background:rgba(255,255,255,.3);transform:rotate(90deg)}
-.modal-body{padding:20px 22px;overflow:auto;flex:1;background:var(--bg2)}
+.modal-body{padding:22px;overflow:auto;flex:1;background:var(--bg2)}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end;align-items:center;padding:14px 22px;
   border-top:1px solid var(--bd);background:var(--panel2);flex-wrap:wrap}
 .modal-foot .note{margin-right:auto;font-size:11px}
 
-.dep-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:11px;margin-bottom:20px}
+/* Rótulo de seção dentro do modal (harmoniza com o padrão .card>h2 do restante da app) */
+.dep-section-lbl{font-size:11px;margin:0 0 12px;color:var(--navy2);
+  text-transform:uppercase;letter-spacing:1.2px;font-weight:700;
+  display:flex;align-items:center;gap:9px}
+.dep-section-lbl::before{content:"";width:4px;height:14px;background:linear-gradient(180deg,var(--navy2),var(--navy3));
+  border-radius:3px;display:inline-block;box-shadow:0 0 0 2px var(--acc2)}
+html[data-theme="dark"] .dep-section-lbl{color:var(--gold2)}
+html[data-theme="dark"] .dep-section-lbl::before{background:linear-gradient(180deg,var(--gold),var(--gold2));box-shadow:0 0 0 2px var(--acc)}
+.dep-block{margin-bottom:24px}
+.dep-block:last-child{margin-bottom:0}
+
+/* Cards de indicadores — grid fixo e mais previsível (3 colunas em telas largas) */
+.dep-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:920px){.dep-kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.dep-kpis{grid-template-columns:1fr}}
 .dep-kpi{background:var(--grad-card);border:1px solid var(--bd);border-radius:var(--radius);
-  padding:12px 14px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm)}
+  padding:14px 15px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);
+  display:flex;flex-direction:column;gap:8px;transition:transform .18s ease,box-shadow .18s ease}
+.dep-kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
 .dep-kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
   background:linear-gradient(180deg,var(--navy2),var(--teal))}
 .dep-kpi.k2::before{background:linear-gradient(180deg,var(--gold),var(--gold2))}
 .dep-kpi.k3::before{background:linear-gradient(180deg,var(--rose),var(--rose2))}
-.dep-kpi .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700}
-.dep-kpi .v{font-size:17.5px;font-weight:800;color:var(--navy);margin-top:5px;letter-spacing:-.3px}
+.dep-kpi .top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.dep-kpi .ic{width:26px;height:26px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:13px;background:var(--acc2);color:var(--navy2)}
+html[data-theme="dark"] .dep-kpi .ic{background:var(--acc);color:var(--gold2)}
+.dep-kpi .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700;
+  text-align:right;line-height:1.35}
+.dep-kpi .v{font-size:18.5px;font-weight:800;color:var(--navy);letter-spacing:-.3px}
 html[data-theme="dark"] .dep-kpi .v{color:#fff}
-.dep-kpi .s{font-size:10.5px;color:var(--mut2);margin-top:3px}
+.dep-kpi .s{font-size:10.5px;color:var(--mut2);line-height:1.4}
 
-.dep-tabs{display:flex;gap:18px;border-bottom:1px solid var(--bd);margin-bottom:16px}
-.dep-tab{background:none;border:none;padding:9px 2px;font-size:12.5px;font-weight:700;color:var(--mut);
-  cursor:pointer;border-bottom:2.5px solid transparent;font-family:inherit;transition:color .15s}
+/* Barra de abas + ações — tabs em formato de segmented control alinhadas com os controles de expandir/recolher */
+.dep-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-bottom:14px}
+.dep-tabs{display:flex;gap:4px;background:var(--panelSoft);border:1px solid var(--bd);
+  border-radius:var(--radius-sm);padding:4px}
+.dep-tab{background:none;border:none;padding:8px 14px;font-size:12px;font-weight:700;color:var(--mut);
+  cursor:pointer;border-radius:8px;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:6px}
 .dep-tab:hover{color:var(--navy2)}
-.dep-tab.active{color:var(--navy2);border-bottom-color:var(--navy2)}
-html[data-theme="dark"] .dep-tab.active{color:var(--gold2);border-bottom-color:var(--gold2)}
+.dep-tab.active{color:#fff;background:linear-gradient(135deg,var(--navy2),var(--navy3));box-shadow:var(--shadow-sm)}
+html[data-theme="dark"] .dep-tab.active{color:#1A1300;background:linear-gradient(135deg,var(--gold),var(--gold2))}
 html[data-theme="dark"] .dep-tab:hover{color:var(--gold2)}
+.dep-actions{display:flex;gap:8px}
+.dep-actions button{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;
+  padding:7px 12px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer;
+  font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px}
+.dep-actions button:hover{border-color:var(--navy2);color:var(--navy2);background:var(--acc2)}
+html[data-theme="dark"] .dep-actions button:hover{border-color:var(--gold2);color:var(--gold2)}
 
-.dep-group{margin-bottom:12px;border:1px solid var(--bd);border-radius:var(--radius-sm);overflow:hidden;background:var(--panel)}
-.dep-group summary{list-style:none;cursor:pointer;padding:10px 14px;background:var(--panelSoft);
-  display:flex;align-items:center;gap:10px;font-weight:700;font-size:12px;color:var(--navy2)}
+.dep-group{margin-bottom:10px;border:1px solid var(--bd);border-radius:var(--radius-sm);overflow:hidden;
+  background:var(--panel);transition:box-shadow .15s}
+.dep-group:last-child{margin-bottom:0}
+.dep-group[open]{box-shadow:var(--shadow-sm)}
+.dep-group summary{list-style:none;cursor:pointer;padding:11px 14px;background:var(--panelSoft);
+  display:flex;align-items:center;gap:10px;font-weight:700;font-size:12.5px;color:var(--navy2)}
 html[data-theme="dark"] .dep-group summary{color:var(--gold2)}
 .dep-group summary::-webkit-details-marker{display:none}
-.dep-group summary .arrow{display:inline-block;transition:transform .2s;font-size:10px;color:var(--mut)}
+.dep-group summary .arrow{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  width:18px;height:18px;border-radius:5px;transition:transform .2s;font-size:9px;color:#fff;
+  background:linear-gradient(135deg,var(--navy2),var(--navy3))}
+html[data-theme="dark"] .dep-group summary .arrow{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1A1300}
 .dep-group[open] summary .arrow{transform:rotate(90deg)}
+.dep-group summary .lbl{flex:1;min-width:0}
+.dep-group summary .chip{flex-shrink:0}
+.dep-group .scroll{border:none;border-radius:0;border-top:1px solid var(--bd)}
 .dep-group table{font-size:11.2px}
-.dep-empty{padding:20px;text-align:center;color:var(--mut);font-size:12px}
+.dep-empty{padding:32px 20px;text-align:center;color:var(--mut);font-size:12.5px;
+  border:1px dashed var(--bd);border-radius:var(--radius-sm);background:var(--panelSoft)}
 
 /* ---------- Módulo: Impostos vs Depreciação (IRPJ/CSLL/PIS/COFINS) ---------- */
 .btn.tax-highlight{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#3A2600;
@@ -525,7 +575,9 @@ html[data-theme="dark"] .btn.tax-highlight{color:#2E1F00}
 .tax-sec>h3{font-size:11px;margin:0 0 12px;color:var(--navy2);text-transform:uppercase;
   letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:8px}
 html[data-theme="dark"] .tax-sec>h3{color:var(--gold2)}
-.tax-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px}
+.tax-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 16px}
+@media(max-width:900px){.tax-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.tax-grid{grid-template-columns:1fr}}
 .tax-grid .full{grid-column:1/-1}
 .tax-grid label.f{display:block}
 .tax-radio{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:8px 0}
@@ -688,8 +740,8 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
       <div class="refdate">
         <div class="ttl">Data de referência para depreciação</div>
         <input type="date" id="fRef">
-        <button class="rst" id="rstRef" title="Voltar para hoje">usar data do sistema</button>
-        <div class="info">A depreciação acumulada e o valor atual do parque são recalculados nesta data (linear, vida útil de 10 anos).</div>
+        <button class="rst" id="rstRef" title="Voltar para hoje">Usar data do Sistema</button>
+        <div class="info">A depreciação (vida útil de 10 anos) e o valor atual dos equipamentos depenede da data.</div>
       </div>
 
       <div class="filters filters-primary">
@@ -783,13 +835,25 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
       <button class="modal-close" id="modalDepClose" title="Fechar">✕</button>
     </div>
     <div class="modal-body">
-      <div class="dep-kpis" id="depKpis"></div>
-      <div class="dep-tabs">
-        <button class="dep-tab active" type="button" data-tab="periodo">📅 Por período (mensal / anual)</button>
-        <button class="dep-tab" type="button" data-tab="empresa">🏢 Por empresa adquirente</button>
+      <div class="dep-block">
+        <div class="dep-section-lbl">Indicadores gerais da seleção</div>
+        <div class="dep-kpis" id="depKpis"></div>
       </div>
-      <div id="depPanelPeriodo"></div>
-      <div id="depPanelEmpresa" class="hidden"></div>
+      <div class="dep-block">
+        <div class="dep-section-lbl">Detalhamento</div>
+        <div class="dep-toolbar">
+          <div class="dep-tabs">
+            <button class="dep-tab active" type="button" data-tab="periodo">📅 Por período (mensal / anual)</button>
+            <button class="dep-tab" type="button" data-tab="empresa">🏢 Por empresa adquirente</button>
+          </div>
+          <div class="dep-actions">
+            <button type="button" id="depExpandAll">⇕ Expandir tudo</button>
+            <button type="button" id="depCollapseAll">⇔ Recolher tudo</button>
+          </div>
+        </div>
+        <div id="depPanelPeriodo"></div>
+        <div id="depPanelEmpresa" class="hidden"></div>
+      </div>
     </div>
     <div class="modal-foot">
       <span class="note" id="depFootNote"></span>
@@ -844,7 +908,7 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
         <div class="tax-grid">
           <div>
             <label class="f">Depreciação do período (R$)</label>
-            <input type="number" id="txDep" step="0.01" min="0">
+            <input type="text" inputmode="decimal" class="money-in" id="txDep" placeholder="R$ 0,00">
             <div class="tax-auto" id="txDepAuto"></div>
           </div>
           <div>
@@ -858,11 +922,11 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
       <div class="tax-sec">
         <h3>③ Premissas contábeis do período (informar manualmente)</h3>
         <div class="tax-grid">
-          <div><label class="f">Lucro contábil antes de IRPJ/CSLL (R$)</label><input type="number" id="txLucro" step="0.01" min="0" placeholder="ex.: 1200000"></div>
-          <div><label class="f">Alíquota IRPJ</label><input type="number" id="txAliqIrpj" value="15" step="0.01"> %</div>
-          <div><label class="f">Alíquota adicional IRPJ</label><input type="number" id="txAliqAdic" value="10" step="0.01"> %</div>
-          <div><label class="f">Limite do adicional no período (R$)</label><input type="number" id="txLimAdic" step="0.01"></div>
-          <div><label class="f">Alíquota CSLL</label><input type="number" id="txAliqCsll" value="9" step="0.01"> %</div>
+          <div><label class="f">Lucro contábil antes de IRPJ/CSLL (R$)</label><input type="text" inputmode="decimal" class="money-in" id="txLucro" placeholder="ex.: R$ 1.200.000,00"></div>
+          <div><label class="f">Alíquota IRPJ</label><input type="number" id="txAliqIrpj" value="15" step="0.01"></div>
+          <div><label class="f">Alíquota adicional IRPJ</label><input type="number" id="txAliqAdic" value="10" step="0.01"></div>
+          <div><label class="f">Limite do adicional no período (R$)</label><input type="text" inputmode="decimal" class="money-in" id="txLimAdic" placeholder="R$ 0,00"></div>
+          <div><label class="f">Alíquota CSLL</label><input type="number" id="txAliqCsll" value="9" step="0.01"></div>
         </div>
       </div>
 
@@ -873,10 +937,10 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
             <label><input type="radio" name="txPisReg" value="nc" checked> Regime não cumulativo (1,65% / 7,60%)</label>
             <label><input type="radio" name="txPisReg" value="cum"> Regime cumulativo (0,65% / 3,00%)</label>
           </div>
-          <div><label class="f">Receita bruta tributável no período (R$)</label><input type="number" id="txReceitaPC" step="0.01" min="0" placeholder="ex.: 6000000"></div>
-          <div><label class="f">Alíquota PIS</label><input type="number" id="txAliqPis" value="1.65" step="0.01"> %</div>
-          <div><label class="f">Alíquota COFINS</label><input type="number" id="txAliqCofins" value="7.6" step="0.01"> %</div>
-          <div><label class="f">Crédito de PIS/COFINS sobre imobilizado no período (R$)</label><input type="number" id="txCredito" value="0" step="0.01" min="0">
+          <div><label class="f">Receita bruta tributável no período (R$)</label><input type="text" inputmode="decimal" class="money-in" id="txReceitaPC" placeholder="ex.: R$ 6.000.000,00"></div>
+          <div><label class="f">Alíquota PIS</label><input type="number" id="txAliqPis" value="1.65" step="0.01"></div>
+          <div><label class="f">Alíquota COFINS</label><input type="number" id="txAliqCofins" value="7.6" step="0.01"></div>
+          <div><label class="f">Crédito de PIS/COFINS sobre imobilizado no período (R$)</label><input type="text" inputmode="decimal" class="money-in" id="txCredito" value="R$ 0,00">
             <div class="note" style="margin-top:4px">Informe apenas se a empresa apurar crédito sobre bens do ativo imobilizado conforme as hipóteses legais do regime não cumulativo (Leis 10.637/2002 e 10.833/2003).</div>
           </div>
         </div>
@@ -1223,7 +1287,7 @@ function tblResumo(){
   const anos=[...new Set(VIEW.map(x=>x.ano))].filter(Boolean).sort();
   const acum=rows=>({itens:rows.length,un:rows.reduce((s,x)=>s+x.qtd,0),vt:rows.reduce((s,x)=>s+x.vt,0),
     dep:rows.reduce((s,x)=>s+(x.dep||0),0),at:rows.reduce((s,x)=>s+(x.atual||0),0)});
-  let h='<thead><tr><th>Ano</th><th>Mês</th><th>Itens</th><th>Unidades</th><th>Valor Total (R$)</th><th>Depreciação acumulada (R$)</th><th>Valor atual (R$)</th><th>% do Total</th></tr></thead><tbody>';
+  let h='<thead><tr><th>Ano</th><th>Mês</th><th class="num">Itens</th><th class="num">Unidades</th><th class="num">Valor Total (R$)</th><th class="num">Depreciação (R$)</th><th class="num">Valor atual (R$)</th><th class="num">% do Total</th></tr></thead><tbody>';
   anos.forEach(a=>{
     const mesesDoAno=[...new Set(VIEW.filter(x=>x.ano===a&&x.mes).map(x=>x.mes))].sort((p,q)=>p-q);
     mesesDoAno.forEach(m=>{
@@ -1278,7 +1342,7 @@ function render(){ kpis(); drawCharts(); tblResumo(); tblAgg('tForn','Fornecedor
 function exportRows(){ return sortedRows().map((x,i)=>({'#':i+1,Empresa:x.empresa,'Nº NF':x.nf,'Data Emissão':dt(x.dtemi),'Data Entrada':dt(x.dtent),
   Equipamento:x.nomeOrig||x.nome,'Equipamento (canônico)':x.nome,'Nº de Série':x.serie,'Código':x.cod,Fornecedor:x.forn,CFOP:x.cfop,NCM:x.ncm,'Qtde.':x.qtd,
   'Valor Unitário (R$)':x.vu,'Valor Total (R$)':x.vt,
-  'Depreciação acumulada (R$)':x.dep==null?'N/D':Math.round(x.dep*100)/100,
+  'Depreciação (R$)':x.dep==null?'N/D':Math.round(x.dep*100)/100,
   ['Valor atual (R$) — '+dt(REF)]:x.atual==null?'N/D':Math.round(x.atual*100)/100,
   'Meses depreciados':x.depMeses==null?'N/D':x.depMeses,
   Ano:x.ano,'Mês':x.mes?MES[x.mes]:''})); }
@@ -1342,7 +1406,7 @@ tr.tot td{background:#D9E2F3;font-weight:bold}
 <div class="kp">
 <div><span>Investimento total</span><b>${brl(vt)}</b></div>
 <div><span>Unidades</span><b>${int(un)}</b></div>
-<div><span>Depreciação acumulada</span><b>${brl(dep)}</b></div>
+<div><span>Depreciação</span><b>${brl(dep)}</b></div>
 <div><span>Valor atual (${dt(REF)})</span><b>${brl(at)}</b></div>
 </div>
 <table><thead><tr><th>#</th><th>Empresa</th><th>Nº NF</th><th>Emissão</th><th>Equipamento</th><th>Nº de série</th><th>Fornecedor</th><th>Qtd</th><th>Valor de aquisição</th><th>Depreciação acum.</th><th>Valor atual</th></tr></thead>
@@ -1361,7 +1425,7 @@ Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limit
 }
 
 /* ---------- PROGRESSO DE IMPORTAÇÃO ---------- */
-function progShow(on){ $('progWrap').classList.toggle('on',on); }
+function progShow(on){ const w=$('progWrap'); w.classList.toggle('on',on); w.classList.toggle('progress-overlay',on); }
 function progSet(p,label,step){
   const pct=Math.max(0,Math.min(100,Math.round(p)));
   $('progFill').style.width=pct+'%';
@@ -1523,13 +1587,13 @@ function depTableHead(label){
 function depBuildKpiCards(rows){
   const k=depMetrics(rows);
   const cards=[
-    ['Valor de aquisição',brl(k.vt),int(k.itens)+' itens · '+int(k.un)+' unidades','k1'],
-    ['Depreciação acumulada',brl(k.dep),pct(k.pctDepMedio)+' do valor de aquisição','k2'],
-    ['Valor atual do parque',brl(k.at),'referência '+dt(REF),'k1'],
-    ['Depreciação média',pct(k.pctDepMedio),'linear · vida útil 10 anos (120 meses)','k3'],
-    ['Idade média',(k.idadeMedia?k.idadeMedia.toFixed(1).replace('.',','):'—')+' meses','desde a emissão da NF','k2'],
-    ['Totalmente depreciados',int(k.totalDepreciados),'de '+int(k.itens)+' itens ('+pct(k.itens?k.totalDepreciados/k.itens*100:0)+')','k3']];
-  return cards.map(([l,v,s,c])=>`<div class="dep-kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+    ['💰','Valor de aquisição',brl(k.vt),int(k.itens)+' itens · '+int(k.un)+' unidades','k1'],
+    ['📉','Depreciação acumulada',brl(k.dep),pct(k.pctDepMedio)+' do valor de aquisição','k2'],
+    ['💵','Valor atual do parque',brl(k.at),'referência '+dt(REF),'k1'],
+    ['📊','Depreciação média',pct(k.pctDepMedio),'linear · vida útil 10 anos (120 meses)','k3'],
+    ['⏱️','Idade média',(k.idadeMedia?k.idadeMedia.toFixed(1).replace('.',','):'—')+' meses','desde a emissão da NF','k2'],
+    ['✅','Totalmente depreciados',int(k.totalDepreciados),'de '+int(k.itens)+' itens ('+pct(k.itens?k.totalDepreciados/k.itens*100:0)+')','k3']];
+  return cards.map(([ic,l,v,s,c])=>`<div class="dep-kpi ${c}"><div class="top"><div class="ic">${ic}</div><div class="l">${l}</div></div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
 }
 function depPanelPeriodo(rows){
   const anos=[...new Set(rows.map(x=>x.ano))].filter(Boolean).sort();
@@ -1539,7 +1603,7 @@ function depPanelPeriodo(rows){
     const meses=[...new Set(rowsAno.filter(x=>x.mes).map(x=>x.mes))].sort((p,q)=>p-q);
     const kAno=depMetrics(rowsAno);
     const body=meses.map(m=>`<tr>${depCells(MES[m],rowsAno.filter(x=>x.mes===m))}</tr>`).join('');
-    return `<details class="dep-group" open><summary><span class="arrow">▸</span>${a}
+    return `<details class="dep-group" open><summary><span class="arrow">▸</span><span class="lbl">${a}</span>
       <span class="chip">${brl0(kAno.vt)} · ${pct(kAno.pctDepMedio)} depreciado</span></summary>
       <div class="scroll" style="max-height:300px"><table>${depTableHead('Mês')}<tbody>${body}</tbody>
       <tfoot><tr class="tot">${depCells('Total '+a,rowsAno)}</tr></tfoot></table></div></details>`;
@@ -1553,7 +1617,7 @@ function depPanelEmpresa(rows){
     const kEmp=depMetrics(rowsEmp);
     const anos=[...new Set(rowsEmp.map(x=>x.ano))].filter(Boolean).sort();
     const body=anos.map(a=>`<tr>${depCells(a,rowsEmp.filter(x=>x.ano===a))}</tr>`).join('');
-    return `<details class="dep-group" open><summary><span class="arrow">▸</span>${esc(emp)}
+    return `<details class="dep-group" open><summary><span class="arrow">▸</span><span class="lbl">${esc(emp)}</span>
       <span class="chip">${brl0(kEmp.vt)} · ${int(kEmp.itens)} itens</span></summary>
       <div class="scroll" style="max-height:300px"><table>${depTableHead('Ano')}<tbody>${body}</tbody>
       <tfoot><tr class="tot">${depCells('Total '+esc(emp),rowsEmp)}</tr></tfoot></table></div></details>`;
@@ -1584,6 +1648,9 @@ document.querySelectorAll('.dep-tab').forEach(btn=>{
     $('depPanelEmpresa').classList.toggle('hidden',tab!=='empresa');
   };
 });
+function depActivePanel(){ return $('depPanelPeriodo').classList.contains('hidden') ? $('depPanelEmpresa') : $('depPanelPeriodo'); }
+$('depExpandAll').onclick=()=>{ depActivePanel().querySelectorAll('.dep-group').forEach(d=>d.open=true); };
+$('depCollapseAll').onclick=()=>{ depActivePanel().querySelectorAll('.dep-group').forEach(d=>d.open=false); };
 
 /* ---------- Exportação em planilha profissional (estilo contábil moderno) ---------- */
 async function depExportXlsx(){
@@ -1666,7 +1733,7 @@ async function depExportXlsx(){
     const wsPer=wb.addWorksheet('Por Período',{properties:{tabColor:{argb:NAVY2}}});
     wsPer.columns=[{header:'Ano',width:10},{header:'Mês',width:14},{header:'Itens',width:10},
       {header:'Unidades',width:11},{header:'Valor de aquisição (R$)',width:20},
-      {header:'Depreciação acumulada (R$)',width:22},{header:'Valor atual (R$)',width:18},{header:'% depreciado',width:13}];
+      {header:'Depreciação (R$)',width:22},{header:'Valor atual (R$)',width:18},{header:'% depreciado',width:13}];
     headerRow(wsPer,1);
     let pr=2; const anos=[...new Set(rows.map(x=>x.ano))].filter(Boolean).sort();
     anos.forEach(a=>{
@@ -1694,7 +1761,7 @@ async function depExportXlsx(){
     const wsEmp=wb.addWorksheet('Por Empresa',{properties:{tabColor:{argb:GOLD}}});
     wsEmp.columns=[{header:'Empresa adquirente',width:22},{header:'Ano',width:10},{header:'Itens',width:10},
       {header:'Unidades',width:11},{header:'Valor de aquisição (R$)',width:20},
-      {header:'Depreciação acumulada (R$)',width:22},{header:'Valor atual (R$)',width:18},{header:'% depreciado',width:13}];
+      {header:'Depreciação (R$)',width:22},{header:'Valor atual (R$)',width:18},{header:'% depreciado',width:13}];
     headerRow(wsEmp,1);
     let pe=2; const emps=[...new Set(rows.map(x=>x.empresa))].filter(Boolean).sort();
     emps.forEach(emp=>{
@@ -1724,7 +1791,7 @@ async function depExportXlsx(){
       {header:'Data Emissão',width:13},{header:'Data Entrada',width:13},{header:'Equipamento',width:42},
       {header:'Nº de Série',width:18},{header:'Fornecedor',width:34},{header:'Qtde.',width:8},
       {header:'Valor Unitário (R$)',width:16},{header:'Valor Total (R$)',width:16},
-      {header:'Depreciação acumulada (R$)',width:20},{header:'Valor atual (R$)',width:16},
+      {header:'Depreciação (R$)',width:20},{header:'Valor atual (R$)',width:16},
       {header:'% depreciado',width:12},{header:'Ano',width:8},{header:'Mês',width:8}];
     headerRow(wsDet,1);
     const sortedR=sortedRows();
@@ -1872,8 +1939,8 @@ function txDepPeriodoAuto(){
 }
 function txAtualizarAuto(){
   const a=txDepPeriodoAuto();
-  $('txDep').value=(Math.round(a.total*100)/100)||0;
-  $('txLimAdic').value=a.periodo.limiteAdicional;
+  $('txDep').value=brl((Math.round(a.total*100)/100)||0);
+  $('txLimAdic').value=brl(a.periodo.limiteAdicional);
   $('txDepAuto').textContent='Calculado automaticamente sobre '+int(a.itens)+' itens da seleção atual de filtros, referente a '+a.periodo.label+'. Você pode sobrescrever o valor acima.';
 }
 function txBuildAnoSelect(){
@@ -1893,15 +1960,25 @@ document.querySelectorAll('input[name="txPisReg"]').forEach(r=>r.onchange=()=>{
 $('txAno').addEventListener('change',txAtualizarAuto);
 $('txTrimestre').addEventListener('change',txAtualizarAuto);
 
+/* Máscara de moeda pt-BR (R$) nos campos monetários do modal */
+['txDep','txLucro','txLimAdic','txReceitaPC','txCredito'].forEach(id=>{
+  const el=$(id); if(!el) return;
+  el.addEventListener('input',()=>{
+    const d=el.value.replace(/\D/g,'');
+    el.value=d?brl(parseInt(d,10)/100):'';
+  });
+  el.addEventListener('blur',()=>{ const v=num(el.value); el.value=el.value.trim()?brl(v):''; });
+});
+
 let TX_RESULT=null;
 function txCalcular(){
   const p=txPeriodo();
-  const dep=(+$('txDep').value||0)*(Math.max(0,Math.min(100,+$('txPctDed').value||0))/100);
-  const lucro=+$('txLucro').value||0;
+  const dep=num($('txDep').value)*(Math.max(0,Math.min(100,+$('txPctDed').value||0))/100);
+  const lucro=num($('txLucro').value);
   const aIrpj=(+$('txAliqIrpj').value||0)/100, aAdic=(+$('txAliqAdic').value||0)/100,
-    limAdic=+$('txLimAdic').value||0, aCsll=(+$('txAliqCsll').value||0)/100;
-  const receitaPC=+$('txReceitaPC').value||0, aPis=(+$('txAliqPis').value||0)/100,
-    aCofins=(+$('txAliqCofins').value||0)/100, credito=+$('txCredito').value||0;
+    limAdic=num($('txLimAdic').value), aCsll=(+$('txAliqCsll').value||0)/100;
+  const receitaPC=num($('txReceitaPC').value), aPis=(+$('txAliqPis').value||0)/100,
+    aCofins=(+$('txAliqCofins').value||0)/100, credito=num($('txCredito').value);
 
   const baseComDep=Math.max(0,lucro-dep);
   const irpj15Com=baseComDep*aIrpj, adicComBase=Math.max(0,baseComDep-limAdic), adicCom=adicComBase*aAdic;
@@ -1948,7 +2025,7 @@ function txRenderTabelas(r){
     <tfoot><tr class="tot"><td colspan="3">PIS/COFINS líquido do período</td><td class="num">${brl(r.liquidoPC)}</td></tr></tfoot>`;
 }
 $('txCalcBtn').onclick=()=>{
-  if(!(+$('txLucro').value>0)){ alert('Informe o lucro contábil antes de IRPJ/CSLL do período.'); return; }
+  if(!(num($('txLucro').value)>0)){ alert('Informe o lucro contábil antes de IRPJ/CSLL do período.'); return; }
   const r=txCalcular();
   txRenderKpis(r); txRenderTabelas(r);
   $('txResultado').classList.remove('hidden');
@@ -2116,6 +2193,8 @@ Este demonstrativo não considera outros ajustes do LALUR/LACS (adições/exclus
 }
 $('txPdf').onclick=txGerarPDF;
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
