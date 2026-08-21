@@ -839,7 +839,7 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
 
     <section class="card hidden" id="secVendidos">
       <h2>Equipamentos vendidos <span class="chip" id="chipVendidos"></span></h2>
-      <p class="note" style="margin-top:-4px;margin-bottom:2px">Depreciação apurada apenas entre a data de entrada (aquisição) e a data de venda de cada bem — os itens abaixo não integram mais o parque ativo. Quando a NF de entrada agrega mais unidades do que as vendidas na NF de saída correspondente, o "valor residual comparável" e o resultado (lucro/prejuízo) são apurados proporcionalmente à quantidade efetivamente vendida.</p>
+      <p class="note" style="margin-top:-4px;margin-bottom:2px">Depreciação apurada apenas entre a data de entrada (aquisição) e a data de venda de cada bem — os itens abaixo não integram mais o parque ativo. Este quadro considera <b>toda a base importada</b>, independentemente dos filtros aplicados à relação de equipamentos acima. Quando a NF de entrada agrega mais unidades do que as vendidas na NF de saída correspondente, o "valor residual comparável" e o resultado (lucro/prejuízo) são apurados proporcionalmente à quantidade efetivamente vendida.</p>
       <p class="note" id="avisoVendaIgnorada" style="margin-top:0;margin-bottom:10px;color:var(--warn);font-weight:600"></p>
       <div class="scroll" style="max-height:360px"><table id="tVendidos"></table></div>
     </section>
@@ -1421,11 +1421,17 @@ function tblEq(){
   }
 }
 /* ---------- Quadro de equipamentos vendidos ---------- */
-function vendidosRows(){ return VIEW.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0)); }
+/* O quadro de "Equipamentos vendidos" é sempre apurado sobre a BASE COMPLETA
+   (ALL), independentemente dos filtros gerais (Ano/Mês/Fornecedor/Modelo/
+   Família/CFOP/Empresa/Valor mínimo) aplicados à relação de equipamentos —
+   trata-se de um demonstrativo de disposição de ativos para fins contábeis,
+   que não pode ficar incompleto por conta de um filtro aplicado ao restante
+   do relatório. */
+function vendidosRows(){ return ALL.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0)); }
 function tblVendidos(){
   const rows=vendidosRows();
   const sec=$('secVendidos');
-  const ignoradas=VIEW.filter(x=>x.vendaIgnorada).length;
+  const ignoradas=ALL.filter(x=>x.vendaIgnorada).length;
   const avisoEl=$('avisoVendaIgnorada');
   if(avisoEl) avisoEl.innerHTML=ignoradas?`⚠ ${int(ignoradas)} ${ignoradas===1?'venda com data anterior à da aquisição foi desconsiderada':'vendas com data anterior à da aquisição foram desconsideradas'} (item${ignoradas===1?'':'s'} mantido${ignoradas===1?'':'s'} como ativo — verificar cadastro na origem).`:'';
   if(!rows.length){ sec.classList.toggle('hidden',!ignoradas); return; }
@@ -1490,13 +1496,14 @@ function gerarPDF(){
   const emissao=new Date().toLocaleString('pt-BR');
   const escopo=buildEscopo();
   const tr=rows.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${esc(x.empresa)}</td><td class="c">${esc(x.nf)}</td><td class="c">${dt(x.dtemi)}</td><td>${esc(x.nomeOrig||x.nome)}</td><td class="c">${esc(x.serie||'—')}</td><td>${esc(x.forn)}</td><td class="n">${int(x.qtd)}</td><td class="n">${brl(x.vt)}</td><td class="n">${x.dep==null?'N/D':brl(x.dep)}</td><td class="n">${x.atual==null?'N/D':brl(x.atual)}</td><td class="c">${x.vendido?'Vendido':'Ativo'}</td></tr>`).join('');
-  const vendidosSel=rows.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
-  const ignoradasSel=rows.filter(x=>x.vendaIgnorada).length;
+  const vendidosSel=ALL.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
+  const ignoradasSel=ALL.filter(x=>x.vendaIgnorada).length;
   const trVend=vendidosSel.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${esc(x.empresa)}</td><td class="c">${esc(x.nf)}</td><td>${esc(x.nomeOrig||x.nome)}</td><td class="c">${esc(x.serie||'—')}</td><td>${esc(x.forn)}</td><td class="n">${brl(x.vt)}</td><td class="c">${dt(x.dtent)}</td><td class="c">${dt(x.dtvenda)}</td><td class="n">${int(x.qtd)}/${x.qtdVendaEfetiva==null?'—':int(x.qtdVendaEfetiva)}</td><td class="n">${nd(x.dep)}</td><td class="n">${nd(x.atualVenda)}</td><td class="n">${x.vrvenda==null?'N/D':brl(x.vrvenda)}</td><td class="n">${x.resultadoVenda==null?'N/D':brl(x.resultadoVenda)}</td></tr>`).join('');
   const vtVend=vendidosSel.reduce((s,x)=>s+x.vt,0),depVend=vendidosSel.reduce((s,x)=>s+(x.dep||0),0),resVend=vendidosSel.reduce((s,x)=>s+(x.atualVenda??x.atual??0),0);
   const comVrSel=vendidosSel.filter(x=>x.vrvenda!=null);
   const vrTotSel=comVrSel.reduce((s,x)=>s+x.vrvenda,0),resultTotSel=comVrSel.reduce((s,x)=>s+(x.resultadoVenda||0),0);
-  const secaoVendidos=vendidosSel.length?`<h2 class="sec" style="margin-top:12pt">Equipamentos vendidos (depreciação apurada da entrada até a venda)</h2>
+  const secaoVendidos=vendidosSel.length?`<h2 class="sec" style="margin-top:12pt">Equipamentos vendidos (base completa, depreciação apurada da entrada até a venda)</h2>
+<p style="font-size:6.8pt;color:#6B7690;margin:0 0 3pt">Este quadro considera toda a base importada, independentemente do escopo/filtro selecionado para o restante do relatório.</p>
 <table><thead><tr><th>#</th><th>Empresa</th><th>Nº NF</th><th>Equipamento</th><th>Nº de série</th><th>Fornecedor</th><th>Valor de aquisição</th><th>Data de entrada</th><th>Data de venda</th><th>Qtd. compra/venda</th><th>Depreciação até a venda</th><th>Valor residual comparável</th><th>Valor de venda</th><th>Resultado</th></tr></thead>
 <tbody>${trVend}<tr class="tot"><td colspan="6" class="c">TOTAL — ${int(vendidosSel.length)} itens</td><td class="n">${brl(vtVend)}</td><td colspan="2"></td><td></td><td class="n">${brl(depVend)}</td><td class="n">${brl(resVend)}</td><td class="n">${comVrSel.length?brl(vrTotSel):'—'}</td><td class="n">${comVrSel.length?brl(resultTotSel):'—'}</td></tr></tbody></table>${ignoradasSel?`<div class="box" style="margin-top:4pt;border-left:2.5pt solid #C8952B">⚠ ${ignoradasSel} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.</div>`:''}`:(ignoradasSel?`<div class="box" style="border-left:2.5pt solid #C8952B">⚠ ${ignoradasSel} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.</div>`:'');
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
@@ -1854,7 +1861,7 @@ async function depExportXlsx(){
       ['Depreciação média',null],
       ['Itens totalmente depreciados',int(k.totalDepreciados)+' de '+int(k.itens)],
       ['Registros sem data/valor (N/D)',int(k.semDados)],
-      ['Vendas desconsideradas (data anterior à aquisição)',int(rows.filter(x=>x.vendaIgnorada).length)]];
+      ['Vendas desconsideradas (data anterior à aquisição)',int(ALL.filter(x=>x.vendaIgnorada).length)]];
     let rIdx=4;
     capaRows.forEach(([label,val])=>{
       const row=wsCapa.getRow(rIdx);
@@ -1954,7 +1961,7 @@ async function depExportXlsx(){
     wsDet.autoFilter={from:{row:1,column:1},to:{row:1,column:18}};
 
     /* ----- Aba Vendidos ----- */
-    const vendidosR=rows.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
+    const vendidosR=ALL.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
     if(vendidosR.length){
       const wsVen=wb.addWorksheet('Vendidos',{properties:{tabColor:{argb:'FFC0455B'}}});
       wsVen.columns=[{header:'#',width:6},{header:'Empresa',width:14},{header:'Nº NF',width:10},
@@ -1984,12 +1991,16 @@ async function depExportXlsx(){
       totalRow(wsVen,lastV+1);
       wsVen.views=[{state:'frozen',ySplit:1}];
       wsVen.autoFilter={from:{row:1,column:1},to:{row:1,column:16}};
-      const ignoradasXls=rows.filter(x=>x.vendaIgnorada).length;
+      const noteBase=wsVen.getRow(lastV+3);
+      noteBase.getCell(1).value='Esta aba considera toda a base importada, independentemente do filtro aplicado na aba "Detalhado".';
+      noteBase.getCell(1).font={italic:true,size:9,color:{argb:'FF6B7690'},name:'Arial'};
+      wsVen.mergeCells(lastV+3,1,lastV+3,8);
+      const ignoradasXls=ALL.filter(x=>x.vendaIgnorada).length;
       if(ignoradasXls){
-        const noteRow=wsVen.getRow(lastV+3);
-        noteRow.getCell(1).value=`⚠ ${ignoradasXls} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.`;
+        const noteRow=wsVen.getRow(lastV+4);
+        noteRow.getCell(1).value=`⚠ ${ignoradasXls} venda(s) com data anterior à da aquisição foram desconsideradas na base completa — item(ns) mantido(s) como ativo.`;
         noteRow.getCell(1).font={italic:true,size:9,color:{argb:'FFE58A00'},name:'Arial'};
-        wsVen.mergeCells(lastV+3,1,lastV+3,8);
+        wsVen.mergeCells(lastV+4,1,lastV+4,8);
       }
     }
 
@@ -2021,15 +2032,16 @@ function depGerarPDF(){
     const linhas=anosE.map(a=>`<tr>${depCells(esc(emp)+' — '+a,rowsEmp.filter(x=>x.ano===a))}</tr>`).join('');
     return linhas+`<tr class="tot">${depCells('Total '+esc(emp),rowsEmp)}</tr>`;
   }).join('');
-  const vendidosPdf=rows.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
-  const ignoradasPdf=rows.filter(x=>x.vendaIgnorada).length;
+  const vendidosPdf=ALL.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
+  const ignoradasPdf=ALL.filter(x=>x.vendaIgnorada).length;
   const trVendPdf=vendidosPdf.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${esc(x.empresa)}</td><td>${esc(x.nomeOrig||x.nome)}</td><td class="c">${esc(x.serie||'—')}</td><td class="n">${brl(x.vt)}</td><td class="c">${dt(x.dtent)}</td><td class="c">${dt(x.dtvenda)}</td><td class="n">${x.depMeses==null?'—':int(x.depMeses)}</td><td class="n">${int(x.qtd)}/${x.qtdVendaEfetiva==null?'—':int(x.qtdVendaEfetiva)}</td><td class="n">${nd(x.dep)}</td><td class="n">${nd(x.atualVenda)}</td><td class="n">${x.vrvenda==null?'N/D':brl(x.vrvenda)}</td><td class="n">${x.resultadoVenda==null?'N/D':brl(x.resultadoVenda)}</td></tr>`).join('');
   const vtVP=vendidosPdf.reduce((s,x)=>s+x.vt,0),depVP=vendidosPdf.reduce((s,x)=>s+(x.dep||0),0),resVP=vendidosPdf.reduce((s,x)=>s+(x.atualVenda??x.atual??0),0);
   const comVrPdf=vendidosPdf.filter(x=>x.vrvenda!=null);
   const vrTotPdf=comVrPdf.reduce((s,x)=>s+x.vrvenda,0),resultTotPdf=comVrPdf.reduce((s,x)=>s+(x.resultadoVenda||0),0);
-  const secVendPdf=vendidosPdf.length?`<h2 class="sec">Equipamentos vendidos — depreciação apurada da entrada até a venda</h2>
+  const secVendPdf=vendidosPdf.length?`<h2 class="sec">Equipamentos vendidos (base completa) — depreciação apurada da entrada até a venda</h2>
+<p style="font-size:6.6pt;color:#6B7690;margin:0 0 3pt">Este quadro considera toda a base importada, independentemente do escopo/filtro selecionado para o restante do relatório.</p>
 <table><thead><tr><th>#</th><th>Empresa</th><th>Equipamento</th><th>Nº de série</th><th>Valor de aquisição</th><th>Data entrada</th><th>Data venda</th><th>Meses</th><th>Qtd. compra/venda</th><th>Depreciação até a venda</th><th>Valor residual comparável</th><th>Valor de venda</th><th>Resultado</th></tr></thead>
-<tbody>${trVendPdf}<tr class="tot"><td colspan="4" class="c">TOTAL — ${int(vendidosPdf.length)} itens</td><td class="n">${brl(vtVP)}</td><td colspan="2"></td><td></td><td></td><td class="n">${brl(depVP)}</td><td class="n">${brl(resVP)}</td><td class="n">${comVrPdf.length?brl(vrTotPdf):'—'}</td><td class="n">${comVrPdf.length?brl(resultTotPdf):'—'}</td></tr></tbody></table>${ignoradasPdf?`<div class="box" style="margin-top:5pt;border-left:2.5pt solid #C8952B">⚠ ${ignoradasPdf} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.</div>`:''}`:(ignoradasPdf?`<div class="box" style="border-left:2.5pt solid #C8952B">⚠ ${ignoradasPdf} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.</div>`:'');
+<tbody>${trVendPdf}<tr class="tot"><td colspan="4" class="c">TOTAL — ${int(vendidosPdf.length)} itens</td><td class="n">${brl(vtVP)}</td><td colspan="2"></td><td></td><td></td><td class="n">${brl(depVP)}</td><td class="n">${brl(resVP)}</td><td class="n">${comVrPdf.length?brl(vrTotPdf):'—'}</td><td class="n">${comVrPdf.length?brl(resultTotPdf):'—'}</td></tr></tbody></table>${ignoradasPdf?`<div class="box" style="margin-top:5pt;border-left:2.5pt solid #C8952B">⚠ ${ignoradasPdf} venda(s) com data anterior à da aquisição foram desconsideradas na base completa — item(ns) mantido(s) como ativo.</div>`:''}`:(ignoradasPdf?`<div class="box" style="border-left:2.5pt solid #C8952B">⚠ ${ignoradasPdf} venda(s) com data anterior à da aquisição foram desconsideradas na base completa — item(ns) mantido(s) como ativo.</div>`:'');
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>GRUPO LABMEDIC — Relatório de depreciação de equipamentos</title>
 <style>
