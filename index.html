@@ -1526,12 +1526,18 @@ tfoot{display:table-footer-group}
 tfoot td{border:0;padding:3pt 0 0;font-size:6.8pt;color:#6B7690;font-weight:normal}
 tr.tot td{background:#D9E2F3;font-weight:bold}
 .lg2{margin-top:8pt;font-size:7.2pt;color:#6B7690;line-height:1.6;border-top:.6pt solid #DFE4EE;padding-top:5pt}
+table.pagewrap{border-collapse:collapse}
+table.pagewrap>thead,table.pagewrap>tbody>tr>td{border:none;padding:0}
+table.pagewrap>thead>tr>td{padding-bottom:8pt}
+table.pagewrap>tbody>tr{page-break-inside:auto}
 @media print{.noprint{display:none}}
 </style></head><body>
+<table class="pagewrap"><thead><tr><td>
 <div class="hd"><div class="lg">GL</div>
 <div><h1>GRUPO LABMEDIC — Relatório de equipamentos adquiridos</h1>
 <div class="s">Ativo imobilizado — aquisições identificadas em notas fiscais de entrada</div></div>
 <div class="r">Emissão: ${esc(emissao)}<br>Origem: ${SRC==='bruta'?'base bruta de NF de entrada':'planilha tratada de equipamentos'}<br>Registros: ${int(rows.length)}</div></div>
+</td></tr></thead><tbody><tr><td>
 <div class="box"><b>Escopo da seleção:</b> ${escopo}</div>
 <div class="kp">
 <div><span>Investimento total</span><b>${brl(vt)}</b></div>
@@ -1549,6 +1555,7 @@ Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limit
 Vendas com data anterior à da aquisição são desconsideradas por inconsistência de pareamento entre a NF de entrada e a de saída — o item permanece classificado como ativo. Quando a NF de entrada agrega mais unidades do que as vendidas na NF de saída correspondente, o resultado (lucro/prejuízo) é apurado sobre o "valor residual comparável", proporcional à quantidade efetivamente vendida — e não sobre o valor residual do lote inteiro.
 <b>N/D</b> = registro sem data ou sem valor de aquisição; excluído do cálculo de depreciação (${int(sd)} ${sd===1?'registro':'registros'} nesta seleção). Valores em reais (R$), conforme a NF de origem, sem correção monetária.
 </div>
+</td></tr></tbody></table>
 <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
 </body></html>`;
   const w=window.open('','_blank');
@@ -2049,12 +2056,18 @@ tbody tr:nth-child(even){background:#F7F9FC}
 .n,.num{text-align:right}.c{text-align:center}
 tr.tot td{background:#D9E2F3;font-weight:bold}
 .lg2{margin-top:8pt;font-size:7.2pt;color:#6B7690;line-height:1.6;border-top:.6pt solid #DFE4EE;padding-top:5pt}
+table.pagewrap{border-collapse:collapse}
+table.pagewrap>thead,table.pagewrap>tbody>tr>td{border:none;padding:0}
+table.pagewrap>thead>tr>td{padding-bottom:8pt}
+table.pagewrap>tbody>tr{page-break-inside:auto}
 @media print{.noprint{display:none}}
 </style></head><body>
+<table class="pagewrap"><thead><tr><td>
 <div class="hd"><div class="lg">GL</div>
 <div><h1>GRUPO LABMEDIC — Relatório de depreciação de equipamentos</h1>
 <div class="s">Ativo imobilizado — depreciação linear apurada sobre as aquisições identificadas em notas fiscais de entrada</div></div>
 <div class="r">Emissão: ${esc(emissao)}<br>Data de referência: ${dt(REF)}<br>Registros: ${int(rows.length)}</div></div>
+</td></tr></thead><tbody><tr><td>
 <div class="box"><b>Escopo da seleção:</b> ${escopo}</div>
 <div class="kp">
 <div><span>Valor de aquisição</span><b>${brl(k.vt)}</b></div>
@@ -2078,6 +2091,7 @@ Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limit
 Vendas com data anterior à da aquisição são desconsideradas por inconsistência de pareamento entre a NF de entrada e a de saída — o item permanece classificado como ativo. Quando a NF de entrada agrega mais unidades do que as vendidas na NF de saída correspondente, o resultado (lucro/prejuízo) é apurado sobre o "valor residual comparável", proporcional à quantidade efetivamente vendida — e não sobre o valor residual do lote inteiro.
 Registros sem data ou sem valor de aquisição são excluídos do cálculo de depreciação (${int(k.semDados)} ${k.semDados===1?'registro':'registros'} nesta seleção). Valores em reais (R$), conforme a NF de origem, sem correção monetária.
 </div>
+</td></tr></tbody></table>
 <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
 </body></html>`;
   const w=window.open('','_blank');
@@ -2330,12 +2344,18 @@ tr.tot td{background:#D9E2F3;font-weight:bold}
 .lg2{margin-top:10pt;font-size:7.4pt;color:#6B7690;line-height:1.65;border-top:.6pt solid #DFE4EE;padding-top:6pt}
 .assin{margin-top:26pt;display:flex;gap:24pt}
 .assin div{flex:1;text-align:center;border-top:.6pt solid #6B7690;padding-top:4pt;font-size:7.6pt;color:#6B7690}
+table.pagewrap{border-collapse:collapse}
+table.pagewrap>thead,table.pagewrap>tbody>tr>td{border:none;padding:0}
+table.pagewrap>thead>tr>td{padding-bottom:9pt}
+table.pagewrap>tbody>tr{page-break-inside:auto}
 @media print{.noprint{display:none}}
 </style></head><body>
+<table class="pagewrap"><thead><tr><td>
 <div class="hd"><div class="lg">GL</div>
 <div><h1>GRUPO LABMEDIC — Memória de cálculo: impostos vs. depreciação</h1>
 <div class="s">IRPJ, CSLL, PIS e COFINS apurados sobre a depreciação dedutível do parque de equipamentos — regime de lucro real</div></div>
 <div class="r">Emissão: ${esc(emissao)}<br>Período: ${esc(r.p.label)}<br>Regime: ${r.p.regime==='trimestral'?'Trimestral':'Anual'}</div></div>
+</td></tr></thead><tbody><tr><td>
 <div class="box warn"><b>Modelo demonstrativo de apoio gerencial</b> — não substitui a apuração oficial da contabilidade (LALUR/LACS, ajustes fiscais adicionais e documentação de suporte). Consulte o contador/advogado tributário responsável.</div>
 <div class="box"><b>Escopo dos equipamentos considerados:</b> ${escopo}</div>
 <div class="kp">
@@ -2370,6 +2390,7 @@ IRPJ apurado a 15% sobre a base ajustada, com adicional de 10% sobre a parcela q
 Este demonstrativo não considera outros ajustes do LALUR/LACS (adições/exclusões diversas), compensação de prejuízos fiscais, incentivos fiscais específicos ou peculiaridades contratuais de cada operação de comodato/locação, que devem ser avaliados pela contabilidade/assessoria tributária da empresa.
 </div>
 <div class="assin"><div>Elaborado por</div><div>Revisado pela contabilidade</div><div>Aprovado pela diretoria</div></div>
+</td></tr></tbody></table>
 <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
 </body></html>`;
   const w=window.open('','_blank');
