@@ -837,6 +837,13 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
       <div class="scroll hidden" id="scrollEq"><table id="tEq"></table></div>
     </section>
 
+    <section class="card hidden" id="secVendidos">
+      <h2>Equipamentos vendidos <span class="chip" id="chipVendidos"></span></h2>
+      <p class="note" style="margin-top:-4px;margin-bottom:2px">Depreciação apurada apenas entre a data de entrada (aquisição) e a data de venda de cada bem — os itens abaixo não integram mais o parque ativo. Quando a NF de entrada agrega mais unidades do que as vendidas na NF de saída correspondente, o "valor residual comparável" e o resultado (lucro/prejuízo) são apurados proporcionalmente à quantidade efetivamente vendida.</p>
+      <p class="note" id="avisoVendaIgnorada" style="margin-top:0;margin-bottom:10px;color:var(--warn);font-weight:600"></p>
+      <div class="scroll" style="max-height:360px"><table id="tVendidos"></table></div>
+    </section>
+
     <section class="card">
       <h2>Critério de seleção aplicado</h2>
       <p class="note" id="criterio"></p>
@@ -1010,10 +1017,52 @@ let ALL=[],VIEW=[],charts={},sort={k:'dtemi',dir:1},CRIT='',SRC='',BUSCA=false;
 const VIDA_MESES=120;
 let REF=new Date(); REF.setHours(0,0,0,0);
 function meses(a,b){ return (b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth())+(b.getDate()>=a.getDate()?0:-1); }
-function depreciar(x){ const base=x.dtemi||x.dtent; if(!base||!(x.vt>0)) return {ok:false,dep:null,atual:null,m:null};
-  const m=Math.max(0,Math.min(VIDA_MESES,meses(base,REF))); const dep=x.vt*m/VIDA_MESES; return {ok:true,dep,atual:x.vt-dep,m}; }
+/* Para equipamentos com DT_VENDA preenchida, a depreciação é apurada apenas no
+   intervalo entre a aquisição (data de entrada) e a data de venda — e não até
+   a data de referência do dashboard, já que o bem deixou de compor o parque
+   ativo a partir da venda. Para os demais itens, mantém-se o cálculo até REF.
+
+   Duas validações adicionais foram incorporadas à apuração da venda:
+
+   1) VENDA COM DATA ANTERIOR À AQUISIÇÃO — inconsistência de cadastro/pareamento
+      entre a NF de entrada e a NF de saída (a venda não pode anteceder a compra).
+      Nesses casos a venda é DESPREZADA: o item volta a ser tratado como um bem
+      ATIVO normal (depreciação até REF, sem entrar nas tabelas/exportações de
+      "Equipamentos vendidos"), preservando-se apenas um sinalizador interno
+      (vendaIgnorada) para fins de aviso ao usuário.
+
+   2) COMPARAÇÃO DE LUCRO/PREJUÍZO PROPORCIONAL À QUANTIDADE — quando a NF de
+      entrada agrega mais de uma unidade (Qtde. > 1) mas a NF de saída vinculada
+      corresponde a uma quantidade diferente (tipicamente menor) de unidades, o
+      valor de venda não pode ser comparado ao valor residual do LOTE INTEIRO,
+      sob pena de distorcer o resultado. A quantidade efetivamente vendida é lida
+      de uma coluna opcional (QTD_VENDA / "Qtde Venda" / "Qtde. Venda" / "Qtde
+      Vendida" / "Qtde. Vendida"); na ausência dessa informação, assume-se — de
+      forma conservadora — que a venda corresponde a 1 unidade sempre que a NF de
+      entrada tiver Qtde. > 1 (caso contrário, a quantidade é a mesma da NF de
+      entrada, mantendo o comportamento anterior quando não há ambiguidade). O
+      valor residual comparável é então o valor residual unitário do lote
+      multiplicado pela quantidade efetivamente vendida. */
+function depreciar(x){
+  const dtentBase=x.dtent||x.dtemi;
+  let vendaValida=!!x.dtvenda;
+  if(vendaValida&&dtentBase&&x.dtvenda<dtentBase) vendaValida=false; /* venda anterior à compra: desprezada */
+  const vendaIgnorada=!!x.dtvenda&&!vendaValida;
+  const vendido=vendaValida;
+  const base=vendido?dtentBase:(x.dtemi||x.dtent);
+  if(!base||!(x.vt>0)) return {ok:false,dep:null,atual:null,m:null,vendido:false,vendaIgnorada,resultado:null,atualVenda:null,qtdCompra:null,qtdVendaEfetiva:null};
+  const fim=vendido?x.dtvenda:REF;
+  const m=Math.max(0,Math.min(VIDA_MESES,meses(base,fim)));
+  const dep=x.vt*m/VIDA_MESES;
+  const atual=x.vt-dep;
+  const qtdCompra=x.qtd>0?x.qtd:1;
+  const qtdVendaEfetiva=vendido?(x.qtdvenda!=null&&x.qtdvenda>0?Math.min(x.qtdvenda,qtdCompra):(qtdCompra>1?1:qtdCompra)):null;
+  const atualVenda=vendido?(atual/qtdCompra)*qtdVendaEfetiva:null;
+  const resultado=(vendido&&x.vrvenda!=null)?x.vrvenda-atualVenda:null;
+  return {ok:true,dep,atual,m,vendido,vendaIgnorada,resultado,atualVenda,qtdCompra,qtdVendaEfetiva};
+}
 const nd=v=>v==null?'N/D':brl(v);
-function recalcDepreciacao(){ ALL.forEach(r=>{const p=depreciar(r);r.dep=p.dep;r.atual=p.atual;r.depMeses=p.m;}); }
+function recalcDepreciacao(){ ALL.forEach(r=>{const p=depreciar(r);r.dep=p.dep;r.atual=p.atual;r.depMeses=p.m;r.vendido=p.vendido;r.sit=p.vendido?'Vendido':'Ativo';r.resultadoVenda=p.resultado;r.atualVenda=p.atualVenda;r.qtdVendaEfetiva=p.qtdVendaEfetiva;r.vendaIgnorada=p.vendaIgnorada;}); }
 
 function toDate(v){ if(v instanceof Date) return v; if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v); return d?new Date(d.y,d.m-1,d.d):null;}
  if(typeof v==='string'){const m=v.match(/(\d{4})-(\d{2})-(\d{2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);const b=v.match(/(\d{2})\/(\d{2})\/(\d{4})/);if(b)return new Date(+b[3],+b[2]-1,+b[1]);} return null; }
@@ -1067,7 +1116,7 @@ function familia(n){ return up(n).replace(/[^A-Z0-9\s\-\/]/g,' ').split(/\s+/).f
 function mk(o){ const d=o.dtemi||o.dtent;
   const nomeOrig=o.nome; const nome=canonNome(o.nome);
   const r={...o,nome,nomeOrig,ano:d?d.getFullYear():null,mes:d?d.getMonth()+1:null,fam:familia(nome)};
-  const p=depreciar(r); r.dep=p.dep; r.atual=p.atual; r.depMeses=p.m; return r; }
+  const p=depreciar(r); r.dep=p.dep; r.atual=p.atual; r.depMeses=p.m; r.vendido=p.vendido; r.sit=p.vendido?'Vendido':'Ativo'; r.resultadoVenda=p.resultado; r.atualVenda=p.atualVenda; r.qtdVendaEfetiva=p.qtdVendaEfetiva; r.vendaIgnorada=p.vendaIgnorada; return r; }
 
 /* ---- formato 1: planilha tratada (aba Equipamentos) ---- */
 function parseTratada(wb){
@@ -1078,13 +1127,25 @@ function parseTratada(wb){
   if(hi<0)return null;
   const H={}; rows[hi].forEach((c,i)=>{H[String(c||'').trim()]=i;});
   const g=(r,k)=>H[k]!=null?r[H[k]]:null, out=[];
+  /* Colunas de venda: aceita variações de rótulo (DT_VENDA, Data Venda, Data de Venda... /
+     VR_VENDA, Valor Venda, Valor de Venda...) */
+  const KVENDA=['DT_VENDA','Data Venda','Data de Venda','DT VENDA','Data da Venda'].find(k=>H[k]!=null);
+  const KVRVENDA=['VR_VENDA','Valor Venda','Valor de Venda','VR VENDA','Valor da Venda'].find(k=>H[k]!=null);
+  /* Coluna opcional de quantidade efetivamente vendida (NF de saída), usada para
+     comparar lucro/prejuízo proporcionalmente quando a NF de entrada agrega mais
+     unidades do que as vendidas. Na ausência dessa coluna, depreciar() assume um
+     padrão conservador (ver comentário da função). */
+  const KQTDVENDA=['QTD_VENDA','Qtde Venda','Qtde. Venda','Qtde Vendida','Qtde. Vendida','Quantidade Vendida','Quantidade Venda'].find(k=>H[k]!=null);
   for(let i=hi+1;i<rows.length;i++){ const r=rows[i]; if(!r||g(r,'Equipamento')==null||String(g(r,'Equipamento')).trim()==='')continue;
     const qtd=num(g(r,'Qtde.'))||1, vu=num(g(r,'Valor Unitário (R$)'));
     let vt=num(g(r,'Valor Total (R$)')); if(!vt) vt=qtd*vu;
     out.push(mk({empresa:String(g(r,'Empresa')||'LABMEDIC'),nf:String(g(r,'Nº NF')??''),forn:String(g(r,'Fornecedor')||'').trim(),
       dtemi:toDate(g(r,'Data Emissão')),dtent:toDate(g(r,'Data Entrada')),nome:String(g(r,'Equipamento')).trim(),
       serie:String(g(r,'Nº de Série')||'').trim(),cod:g(r,'Código')!=null?String(g(r,'Código')):'',cfop:g(r,'CFOP')!=null?String(g(r,'CFOP')):'',
-      ncm:g(r,'NCM')!=null?String(g(r,'NCM')):'',qtd,vu:vu||(qtd?vt/qtd:0),vt}));
+      ncm:g(r,'NCM')!=null?String(g(r,'NCM')):'',qtd,vu:vu||(qtd?vt/qtd:0),vt,
+      dtvenda:KVENDA?toDate(g(r,KVENDA)):null,
+      vrvenda:KVRVENDA&&g(r,KVRVENDA)!=null&&g(r,KVRVENDA)!==''?num(g(r,KVRVENDA)):null,
+      qtdvenda:KQTDVENDA&&g(r,KQTDVENDA)!=null&&g(r,KQTDVENDA)!==''?num(g(r,KQTDVENDA)):null}));
   }
   if(!out.length)return null;
   CRIT='Fonte: planilha tratada <b>Equipamentos Adquiridos – LABMEDIC</b> (aba "'+name+'"), já contendo apenas os bens de capital extraídos das notas fiscais de entrada. Valores conforme a NF de origem, sem correção monetária.';
@@ -1252,13 +1313,14 @@ function kpis(){
     ['Investimento total',brl(vt),VIEW.length+' itens de equipamento','k1'],
     ['Unidades adquiridas',int(un),'ticket médio '+brl(un?vt/un:0),'k2'],
     ['Notas fiscais',int(new Set(VIEW.map(x=>x.nf)).size),int(new Set(VIEW.map(x=>x.forn)).size)+' fornecedores','k3'],
-    ['Período',anos.length?anos[0]+' – '+anos[anos.length-1]:'—',anos.length?'média '+brl0(vt/anos.length)+'/ano':'','k4'],
-    ['Ano de maior investimento',porAno?porAno.k:'—',porAno?brl0(porAno.vt):'','k1'],
-    ['Maior fornecedor','<span class="sm">'+cut(topF&&topF.k,34)+'</span>',topF?brl0(topF.vt)+' ('+(vt?(topF.vt/vt*100).toFixed(1):0)+'%)':'','k2'],
+    ['Período',anos.length?anos[0]+' – '+anos[anos.length-1]:'—',anos.length?'média '+brl(vt/anos.length)+'/ano':'','k4'],
+    ['Ano de maior investimento',porAno?porAno.k:'—',porAno?brl(porAno.vt):'','k1'],
+    ['Maior fornecedor','<span class="sm">'+cut(topF&&topF.k,34)+'</span>',topF?brl(topF.vt)+' ('+(vt?(topF.vt/vt*100).toFixed(1):0)+'%)':'','k2'],
     ['Modelos distintos',int(new Set(VIEW.map(x=>x.nome)).size),int(VIEW.filter(x=>x.serie).length)+' itens com nº de série','k3'],
-    ['Maior aquisição',maior?brl0(maior.vt):'—','<span>'+cut(maior&&maior.nome,34)+'</span>','k4'],
-    ['Depreciação acumulada',brl0(VIEW.reduce((s,x)=>s+(x.dep||0),0)),'linear — vida útil 10 anos','k1'],
-    ['Valor atual do parque',brl0(VIEW.reduce((s,x)=>s+(x.atual||0),0)),'referência '+dt(REF),'k2']];
+    ['Maior aquisição',maior?brl(maior.vt):'—','<span>'+cut(maior&&maior.nome,34)+'</span>','k4'],
+    ['Depreciação acumulada',brl(VIEW.reduce((s,x)=>s+(x.dep||0),0)),'linear — vida útil 10 anos','k1'],
+    ['Valor atual do parque',brl(VIEW.reduce((s,x)=>s+(x.atual||0),0)),'referência '+dt(REF),'k2'],
+    ['Equipamentos vendidos',int(VIEW.filter(x=>x.vendido).length),VIEW.filter(x=>x.vendido).length?brl(VIEW.filter(x=>x.vendido).reduce((s,x)=>s+x.vt,0))+' em valor de aquisição':'nenhum na seleção','k3']];
   $('kpis').innerHTML=data.map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
   $('chipQtd').textContent=int(VIEW.length)+' itens • '+int(un)+' unidades • '+brl(vt);
   $('resumoFiltro').innerHTML='Exibindo <b>'+int(VIEW.length)+'</b> de '+int(ALL.length)+' itens — '+brl(vt);
@@ -1330,7 +1392,7 @@ function tblAgg(el,label,keyfn){
   h+=`</tbody><tfoot><tr><td>TOTAL</td><td class="num">${int(VIEW.length)}</td><td class="num">${int(VIEW.reduce((s,x)=>s+x.qtd,0))}</td><td class="num">${brl(total)}</td><td class="num">100,0%</td></tr></tfoot>`;
   $(el).innerHTML=h;
 }
-const COLS=[['#','idx'],['Empresa','empresa'],['Nº NF','nf'],['Data Emissão','dtemi'],['Data Entrada','dtent'],['Equipamento','nome'],['Nº de Série','serie'],['Código','cod'],['Fornecedor','forn'],['CFOP','cfop'],['NCM','ncm'],['Qtde.','qtd'],['Valor Unitário','vu'],['Valor Total','vt'],['Depreciação acumulada','dep'],['Valor atual','atual'],['Ano','ano'],['Mês','mes']];
+const COLS=[['#','idx'],['Empresa','empresa'],['Nº NF','nf'],['Data Emissão','dtemi'],['Data Entrada','dtent'],['Equipamento','nome'],['Nº de Série','serie'],['Código','cod'],['Fornecedor','forn'],['CFOP','cfop'],['NCM','ncm'],['Qtde.','qtd'],['Valor Unitário','vu'],['Valor Total','vt'],['Depreciação acumulada','dep'],['Valor atual','atual'],['Situação','sit'],['Data Venda','dtvenda'],['Ano','ano'],['Mês','mes']];
 function sortedRows(){
   return VIEW.slice().sort((a,b)=>{const k=sort.k;let x=a[k],y=b[k];
     if(x instanceof Date||y instanceof Date){x=x?x.getTime():0;y=y?y.getTime():0;}
@@ -1340,10 +1402,10 @@ function sortedRows(){
 function tblEq(){
   const rows=sortedRows();
   let h='<thead><tr>'+COLS.map(([l,k])=>`<th class="sortable" data-k="${k}">${l}${sort.k===k?(sort.dir>0?' ▲':' ▼'):''}</th>`).join('')+'</tr></thead><tbody>';
-  rows.forEach((x,i)=>{ const nomeExib=x.nomeOrig||x.nome; h+=`<tr><td class="ctr">${i+1}</td><td class="ctr">${x.empresa}</td><td class="ctr">${x.nf}</td><td class="ctr">${dt(x.dtemi)}</td><td class="ctr">${dt(x.dtent)}</td><td title="Nome canônico: ${x.nome.replace(/"/g,'&quot;')}">${nomeExib}</td><td class="ctr">${x.serie||'—'}</td><td class="ctr">${x.cod}</td><td>${x.forn}</td><td class="ctr">${x.cfop}</td><td class="ctr">${x.ncm}</td><td class="num">${int(x.qtd)}</td><td class="num">${brl(x.vu)}</td><td class="num">${brl(x.vt)}</td><td class="num">${nd(x.dep)}</td><td class="num">${nd(x.atual)}</td><td class="ctr">${x.ano||''}</td><td class="ctr">${x.mes?MES[x.mes]:''}</td></tr>`; });
+  rows.forEach((x,i)=>{ const nomeExib=x.nomeOrig||x.nome; h+=`<tr><td class="ctr">${i+1}</td><td class="ctr">${x.empresa}</td><td class="ctr">${x.nf}</td><td class="ctr">${dt(x.dtemi)}</td><td class="ctr">${dt(x.dtent)}</td><td title="Nome canônico: ${x.nome.replace(/"/g,'&quot;')}">${nomeExib}</td><td class="ctr">${x.serie||'—'}</td><td class="ctr">${x.cod}</td><td>${x.forn}</td><td class="ctr">${x.cfop}</td><td class="ctr">${x.ncm}</td><td class="num">${int(x.qtd)}</td><td class="num">${brl(x.vu)}</td><td class="num">${brl(x.vt)}</td><td class="num">${nd(x.dep)}</td><td class="num">${nd(x.atual)}</td><td class="ctr">${x.vendido?'<span class="chip" style="background:var(--rose);color:#fff">Vendido</span>':'Ativo'}</td><td class="ctr">${x.vendido?dt(x.dtvenda):'—'}</td><td class="ctr">${x.ano||''}</td><td class="ctr">${x.mes?MES[x.mes]:''}</td></tr>`; });
   const un=VIEW.reduce((s,x)=>s+x.qtd,0),vt=VIEW.reduce((s,x)=>s+x.vt,0),
     dep=VIEW.reduce((s,x)=>s+(x.dep||0),0),at=VIEW.reduce((s,x)=>s+(x.atual||0),0);
-  h+=`</tbody><tfoot><tr><td colspan="11" class="ctr">TOTAL (${int(VIEW.length)} itens)</td><td class="num">${int(un)}</td><td></td><td class="num">${brl(vt)}</td><td class="num">${brl(dep)}</td><td class="num">${brl(at)}</td><td colspan="2"></td></tr></tfoot>`;
+  h+=`</tbody><tfoot><tr><td colspan="11" class="ctr">TOTAL (${int(VIEW.length)} itens)</td><td class="num">${int(un)}</td><td></td><td class="num">${brl(vt)}</td><td class="num">${brl(dep)}</td><td class="num">${brl(at)}</td><td colspan="4"></td></tr></tfoot>`;
   $('tEq').innerHTML=h;
   $('tEq').querySelectorAll('th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;
     if(k==='idx')return; sort.dir=sort.k===k?-sort.dir:1; sort.k=k; tblEq();});
@@ -1358,7 +1420,38 @@ function tblEq(){
       requestAnimationFrame(()=>{ sc.scrollTop=0; sc.scrollLeft=0; }); });
   }
 }
-function render(){ kpis(); drawCharts(); tblResumo(); tblAgg('tForn','Fornecedor',x=>x.forn); tblAgg('tMod','Modelo',x=>x.nome); tblEq(); }
+/* ---------- Quadro de equipamentos vendidos ---------- */
+function vendidosRows(){ return VIEW.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0)); }
+function tblVendidos(){
+  const rows=vendidosRows();
+  const sec=$('secVendidos');
+  const ignoradas=VIEW.filter(x=>x.vendaIgnorada).length;
+  const avisoEl=$('avisoVendaIgnorada');
+  if(avisoEl) avisoEl.innerHTML=ignoradas?`⚠ ${int(ignoradas)} ${ignoradas===1?'venda com data anterior à da aquisição foi desconsiderada':'vendas com data anterior à da aquisição foram desconsideradas'} (item${ignoradas===1?'':'s'} mantido${ignoradas===1?'':'s'} como ativo — verificar cadastro na origem).`:'';
+  if(!rows.length){ sec.classList.toggle('hidden',!ignoradas); return; }
+  sec.classList.remove('hidden');
+  const vt=rows.reduce((s,x)=>s+x.vt,0),dep=rows.reduce((s,x)=>s+(x.dep||0),0),res=rows.reduce((s,x)=>s+(x.atualVenda??x.atual??0),0);
+  const comVr=rows.filter(x=>x.vrvenda!=null);
+  const vrTot=comVr.reduce((s,x)=>s+x.vrvenda,0), resultTot=comVr.reduce((s,x)=>s+(x.resultadoVenda||0),0);
+  $('chipVendidos').textContent=int(rows.length)+' itens • '+brl(vt)+' em aquisição'+(comVr.length?' • '+brl(vrTot)+' vendidos por • resultado '+brl(resultTot):'');
+  let h='<thead><tr><th>#</th><th>Empresa</th><th>Nº NF</th><th>Equipamento</th><th>Nº de Série</th><th>Fornecedor</th>'+
+    '<th class="num">Valor de aquisição</th><th>Data de Entrada</th><th>Data de Venda</th><th class="num">Meses depreciados</th>'+
+    '<th class="num">Qtde. NF entrada</th><th class="num">Qtde. considerada na venda</th>'+
+    '<th class="num">Depreciação até a venda</th><th class="num">Valor residual comparável</th><th class="num">Valor de venda</th><th class="num">Resultado (lucro/prejuízo)</th></tr></thead><tbody>';
+  rows.forEach((x,i)=>{ const resHtml=x.resultadoVenda==null?'N/D':`<span style="color:${x.resultadoVenda>=0?'var(--success)':'var(--danger)'};font-weight:700">${brl(x.resultadoVenda)}</span>`;
+    const qtdDivergente=x.qtdVendaEfetiva!=null&&x.qtdVendaEfetiva!==x.qtd;
+    h+=`<tr><td class="ctr">${i+1}</td><td class="ctr">${x.empresa}</td><td class="ctr">${x.nf}</td>`+
+    `<td title="Nome canônico: ${x.nome.replace(/"/g,'&quot;')}">${x.nomeOrig||x.nome}</td><td class="ctr">${x.serie||'—'}</td><td>${x.forn}</td>`+
+    `<td class="num">${brl(x.vt)}</td><td class="ctr">${dt(x.dtent)}</td><td class="ctr">${dt(x.dtvenda)}</td>`+
+    `<td class="num">${x.depMeses==null?'—':int(x.depMeses)}</td>`+
+    `<td class="num">${int(x.qtd)}</td><td class="num"${qtdDivergente?' style="color:var(--warn);font-weight:700"':''}>${x.qtdVendaEfetiva==null?'—':int(x.qtdVendaEfetiva)}</td>`+
+    `<td class="num">${nd(x.dep)}</td><td class="num">${nd(x.atualVenda)}</td>`+
+    `<td class="num">${x.vrvenda==null?'N/D':brl(x.vrvenda)}</td><td class="num">${resHtml}</td></tr>`; });
+  h+=`</tbody><tfoot><tr><td colspan="6" class="ctr">TOTAL (${int(rows.length)} itens)</td><td class="num">${brl(vt)}</td><td colspan="4"></td><td class="num">${brl(dep)}</td><td class="num">${brl(res)}</td>`+
+    `<td class="num">${comVr.length?brl(vrTot):'—'}</td><td class="num">${comVr.length?brl(resultTot):'—'}</td></tr></tfoot>`;
+  $('tVendidos').innerHTML=h;
+}
+function render(){ kpis(); drawCharts(); tblResumo(); tblAgg('tForn','Fornecedor',x=>x.forn); tblAgg('tMod','Modelo',x=>x.nome); tblEq(); tblVendidos(); }
 
 /* ---------- export ---------- */
 function exportRows(){ return sortedRows().map((x,i)=>({'#':i+1,Empresa:x.empresa,'Nº NF':x.nf,'Data Emissão':dt(x.dtemi),'Data Entrada':dt(x.dtent),
@@ -1367,6 +1460,12 @@ function exportRows(){ return sortedRows().map((x,i)=>({'#':i+1,Empresa:x.empres
   'Depreciação (R$)':x.dep==null?'N/D':Math.round(x.dep*100)/100,
   ['Valor atual (R$) — '+dt(REF)]:x.atual==null?'N/D':Math.round(x.atual*100)/100,
   'Meses depreciados':x.depMeses==null?'N/D':x.depMeses,
+  'Situação':x.vendido?'Vendido':'Ativo','Data Venda':x.vendido?dt(x.dtvenda):'',
+  'Valor de Venda (R$)':x.vendido&&x.vrvenda!=null?Math.round(x.vrvenda*100)/100:'',
+  ['Valor residual comparável (R$)']:x.vendido&&x.atualVenda!=null?Math.round(x.atualVenda*100)/100:'',
+  'Resultado na Venda (R$)':x.vendido&&x.resultadoVenda!=null?Math.round(x.resultadoVenda*100)/100:'',
+  'Observação (venda)':x.vendaIgnorada?'Venda desconsiderada — data anterior à aquisição; item mantido como ativo':
+    (x.vendido&&x.qtdVendaEfetiva!=null&&x.qtdVendaEfetiva!==x.qtd?`Resultado apurado sobre ${x.qtdVendaEfetiva} de ${x.qtd} unidade(s) da NF de entrada`:''),
   Ano:x.ano,'Mês':x.mes?MES[x.mes]:''})); }
 function dl(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
 $('csv').onclick=()=>{ const r=exportRows(); const head=Object.keys(r[0]||{});
@@ -1390,7 +1489,16 @@ function gerarPDF(){
   const sd=rows.filter(x=>x.dep==null).length;
   const emissao=new Date().toLocaleString('pt-BR');
   const escopo=buildEscopo();
-  const tr=rows.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${esc(x.empresa)}</td><td class="c">${esc(x.nf)}</td><td class="c">${dt(x.dtemi)}</td><td>${esc(x.nomeOrig||x.nome)}</td><td class="c">${esc(x.serie||'—')}</td><td>${esc(x.forn)}</td><td class="n">${int(x.qtd)}</td><td class="n">${brl(x.vt)}</td><td class="n">${x.dep==null?'N/D':brl(x.dep)}</td><td class="n">${x.atual==null?'N/D':brl(x.atual)}</td></tr>`).join('');
+  const tr=rows.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${esc(x.empresa)}</td><td class="c">${esc(x.nf)}</td><td class="c">${dt(x.dtemi)}</td><td>${esc(x.nomeOrig||x.nome)}</td><td class="c">${esc(x.serie||'—')}</td><td>${esc(x.forn)}</td><td class="n">${int(x.qtd)}</td><td class="n">${brl(x.vt)}</td><td class="n">${x.dep==null?'N/D':brl(x.dep)}</td><td class="n">${x.atual==null?'N/D':brl(x.atual)}</td><td class="c">${x.vendido?'Vendido':'Ativo'}</td></tr>`).join('');
+  const vendidosSel=rows.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
+  const ignoradasSel=rows.filter(x=>x.vendaIgnorada).length;
+  const trVend=vendidosSel.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${esc(x.empresa)}</td><td class="c">${esc(x.nf)}</td><td>${esc(x.nomeOrig||x.nome)}</td><td class="c">${esc(x.serie||'—')}</td><td>${esc(x.forn)}</td><td class="n">${brl(x.vt)}</td><td class="c">${dt(x.dtent)}</td><td class="c">${dt(x.dtvenda)}</td><td class="n">${int(x.qtd)}/${x.qtdVendaEfetiva==null?'—':int(x.qtdVendaEfetiva)}</td><td class="n">${nd(x.dep)}</td><td class="n">${nd(x.atualVenda)}</td><td class="n">${x.vrvenda==null?'N/D':brl(x.vrvenda)}</td><td class="n">${x.resultadoVenda==null?'N/D':brl(x.resultadoVenda)}</td></tr>`).join('');
+  const vtVend=vendidosSel.reduce((s,x)=>s+x.vt,0),depVend=vendidosSel.reduce((s,x)=>s+(x.dep||0),0),resVend=vendidosSel.reduce((s,x)=>s+(x.atualVenda??x.atual??0),0);
+  const comVrSel=vendidosSel.filter(x=>x.vrvenda!=null);
+  const vrTotSel=comVrSel.reduce((s,x)=>s+x.vrvenda,0),resultTotSel=comVrSel.reduce((s,x)=>s+(x.resultadoVenda||0),0);
+  const secaoVendidos=vendidosSel.length?`<h2 class="sec" style="margin-top:12pt">Equipamentos vendidos (depreciação apurada da entrada até a venda)</h2>
+<table><thead><tr><th>#</th><th>Empresa</th><th>Nº NF</th><th>Equipamento</th><th>Nº de série</th><th>Fornecedor</th><th>Valor de aquisição</th><th>Data de entrada</th><th>Data de venda</th><th>Qtd. compra/venda</th><th>Depreciação até a venda</th><th>Valor residual comparável</th><th>Valor de venda</th><th>Resultado</th></tr></thead>
+<tbody>${trVend}<tr class="tot"><td colspan="6" class="c">TOTAL — ${int(vendidosSel.length)} itens</td><td class="n">${brl(vtVend)}</td><td colspan="2"></td><td></td><td class="n">${brl(depVend)}</td><td class="n">${brl(resVend)}</td><td class="n">${comVrSel.length?brl(vrTotSel):'—'}</td><td class="n">${comVrSel.length?brl(resultTotSel):'—'}</td></tr></tbody></table>${ignoradasSel?`<div class="box" style="margin-top:4pt;border-left:2.5pt solid #C8952B">⚠ ${ignoradasSel} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.</div>`:''}`:(ignoradasSel?`<div class="box" style="border-left:2.5pt solid #C8952B">⚠ ${ignoradasSel} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.</div>`:'');
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>GRUPO LABMEDIC — Relatório de equipamentos adquiridos</title>
 <style>
@@ -1431,12 +1539,14 @@ tr.tot td{background:#D9E2F3;font-weight:bold}
 <div><span>Depreciação</span><b>${brl(dep)}</b></div>
 <div><span>Valor atual (${dt(REF)})</span><b>${brl(at)}</b></div>
 </div>
-<table><thead><tr><th>#</th><th>Empresa</th><th>Nº NF</th><th>Emissão</th><th>Equipamento</th><th>Nº de série</th><th>Fornecedor</th><th>Qtd</th><th>Valor de aquisição</th><th>Depreciação acum.</th><th>Valor atual</th></tr></thead>
-<tbody>${tr}<tr class="tot"><td colspan="7" class="c">TOTAL — ${int(rows.length)} itens</td><td class="n">${int(un)}</td><td class="n">${brl(vt)}</td><td class="n">${brl(dep)}</td><td class="n">${brl(at)}</td></tr></tbody>
-<tfoot><tr><td colspan="11"><div style="border-top:.5pt solid #DFE4EE;padding-top:3pt;display:flex"><span>GRUPO LABMEDIC — documento gerado automaticamente pelo Dashboard de equipamentos adquiridos · uso interno</span><span style="margin-left:auto">${esc(emissao)}</span></div></td></tr></tfoot></table>
+<table><thead><tr><th>#</th><th>Empresa</th><th>Nº NF</th><th>Emissão</th><th>Equipamento</th><th>Nº de série</th><th>Fornecedor</th><th>Qtd</th><th>Valor de aquisição</th><th>Depreciação acum.</th><th>Valor atual</th><th>Situação</th></tr></thead>
+<tbody>${tr}<tr class="tot"><td colspan="7" class="c">TOTAL — ${int(rows.length)} itens</td><td class="n">${int(un)}</td><td class="n">${brl(vt)}</td><td class="n">${brl(dep)}</td><td class="n">${brl(at)}</td><td></td></tr></tbody>
+<tfoot><tr><td colspan="12"><div style="border-top:.5pt solid #DFE4EE;padding-top:3pt;display:flex"><span>GRUPO LABMEDIC — documento gerado automaticamente pelo Dashboard de equipamentos adquiridos · uso interno</span><span style="margin-left:auto">${esc(emissao)}</span></div></td></tr></tfoot></table>
+${secaoVendidos}
 <div class="lg2"><b>Legendas e critérios:</b>
 Depreciação linear (método das quotas constantes), vida útil de <b>10 anos</b> (120 meses) e sem valor residual, conforme prazos admitidos pela legislação fiscal brasileira (IN RFB 1.700/2017, Anexo III — máquinas e equipamentos).
-Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limitada a 100% do valor. Valor atual = valor de aquisição − depreciação acumulada, apurado na data de referência (${dt(REF)}).
+Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limitada a 100% do valor. Valor atual = valor de aquisição − depreciação acumulada, apurado na data de referência (${dt(REF)}). Para equipamentos <b>vendidos</b> (com data de venda informada), a depreciação é apurada somente entre a data de entrada (aquisição) e a data de venda — não até a data de referência — e o "valor atual" corresponde ao valor contábil residual na data da venda.
+Vendas com data anterior à da aquisição são desconsideradas por inconsistência de pareamento entre a NF de entrada e a de saída — o item permanece classificado como ativo. Quando a NF de entrada agrega mais unidades do que as vendidas na NF de saída correspondente, o resultado (lucro/prejuízo) é apurado sobre o "valor residual comparável", proporcional à quantidade efetivamente vendida — e não sobre o valor residual do lote inteiro.
 <b>N/D</b> = registro sem data ou sem valor de aquisição; excluído do cálculo de depreciação (${int(sd)} ${sd===1?'registro':'registros'} nesta seleção). Valores em reais (R$), conforme a NF de origem, sem correção monetária.
 </div>
 <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
@@ -1736,7 +1846,8 @@ async function depExportXlsx(){
       ['Valor atual do parque',null],
       ['Depreciação média',null],
       ['Itens totalmente depreciados',int(k.totalDepreciados)+' de '+int(k.itens)],
-      ['Registros sem data/valor (N/D)',int(k.semDados)]];
+      ['Registros sem data/valor (N/D)',int(k.semDados)],
+      ['Vendas desconsideradas (data anterior à aquisição)',int(rows.filter(x=>x.vendaIgnorada).length)]];
     let rIdx=4;
     capaRows.forEach(([label,val])=>{
       const row=wsCapa.getRow(rIdx);
@@ -1814,13 +1925,14 @@ async function depExportXlsx(){
       {header:'Nº de Série',width:18},{header:'Fornecedor',width:34},{header:'Qtde.',width:8},
       {header:'Valor Unitário (R$)',width:16},{header:'Valor Total (R$)',width:16},
       {header:'Depreciação (R$)',width:20},{header:'Valor atual (R$)',width:16},
-      {header:'% depreciado',width:12},{header:'Ano',width:8},{header:'Mês',width:8}];
+      {header:'% depreciado',width:12},{header:'Situação',width:11},{header:'Data Venda',width:13},
+      {header:'Ano',width:8},{header:'Mês',width:8}];
     headerRow(wsDet,1);
     const sortedR=sortedRows();
     sortedR.forEach((x,i)=>{
       const row=wsDet.addRow([i+1,x.empresa,x.nf,dt(x.dtemi),dt(x.dtent),x.nomeOrig||x.nome,x.serie||'—',
         x.forn,x.qtd,x.vu,x.vt,x.dep==null?null:x.dep,x.atual==null?null:x.atual,
-        (x.dep==null||!x.vt)?null:x.dep/x.vt,x.ano,x.mes?MES[x.mes]:'']);
+        (x.dep==null||!x.vt)?null:x.dep/x.vt,x.vendido?'Vendido':'Ativo',x.vendido?dt(x.dtvenda):'',x.ano,x.mes?MES[x.mes]:'']);
       row.getCell(10).numFmt=moneyFmt; row.getCell(11).numFmt=moneyFmt;
       row.getCell(12).numFmt=moneyFmt; row.getCell(13).numFmt=moneyFmt; row.getCell(14).numFmt=pctFmtX;
     });
@@ -1828,11 +1940,51 @@ async function depExportXlsx(){
     bodyBorders(wsDet,2,lastRow);
     zebra(wsDet,2,lastRow);
     const kTot=depMetrics(sortedR);
-    const totR=wsDet.addRow(['','','','','','TOTAL — '+int(sortedR.length)+' itens','','',kTot.un,'',kTot.vt,kTot.dep,kTot.at,kTot.vt?kTot.dep/kTot.vt:0,'','']);
+    const totR=wsDet.addRow(['','','','','','TOTAL — '+int(sortedR.length)+' itens','','',kTot.un,'',kTot.vt,kTot.dep,kTot.at,kTot.vt?kTot.dep/kTot.vt:0,'','','','']);
     totR.getCell(11).numFmt=moneyFmt; totR.getCell(12).numFmt=moneyFmt; totR.getCell(13).numFmt=moneyFmt; totR.getCell(14).numFmt=pctFmtX;
     totalRow(wsDet,lastRow+1);
     wsDet.views=[{state:'frozen',ySplit:1}];
-    wsDet.autoFilter={from:{row:1,column:1},to:{row:1,column:16}};
+    wsDet.autoFilter={from:{row:1,column:1},to:{row:1,column:18}};
+
+    /* ----- Aba Vendidos ----- */
+    const vendidosR=rows.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
+    if(vendidosR.length){
+      const wsVen=wb.addWorksheet('Vendidos',{properties:{tabColor:{argb:'FFC0455B'}}});
+      wsVen.columns=[{header:'#',width:6},{header:'Empresa',width:14},{header:'Nº NF',width:10},
+        {header:'Equipamento',width:42},{header:'Nº de Série',width:18},{header:'Fornecedor',width:34},
+        {header:'Valor de aquisição (R$)',width:20},{header:'Data de Entrada',width:14},{header:'Data de Venda',width:14},
+        {header:'Meses depreciados',width:16},{header:'Qtde. NF entrada',width:15},{header:'Qtde. considerada na venda',width:20},
+        {header:'Depreciação até a venda (R$)',width:24},{header:'Valor residual comparável (R$)',width:26},
+        {header:'Valor de venda (R$)',width:18},{header:'Resultado — lucro/prejuízo (R$)',width:24}];
+      headerRow(wsVen,1);
+      vendidosR.forEach((x,i)=>{
+        wsVen.addRow([i+1,x.empresa,x.nf,x.nomeOrig||x.nome,x.serie||'—',x.forn,x.vt,dt(x.dtent),dt(x.dtvenda),
+          x.depMeses==null?null:x.depMeses,x.qtd,x.qtdVendaEfetiva==null?null:x.qtdVendaEfetiva,
+          x.dep==null?null:x.dep,x.atualVenda==null?null:x.atualVenda,
+          x.vrvenda==null?null:x.vrvenda,x.resultadoVenda==null?null:x.resultadoVenda]);
+        const row=wsVen.getRow(i+2); row.getCell(7).numFmt=moneyFmt; row.getCell(13).numFmt=moneyFmt; row.getCell(14).numFmt=moneyFmt;
+        row.getCell(15).numFmt=moneyFmt; row.getCell(16).numFmt=moneyFmt;
+        if(x.qtdVendaEfetiva!=null&&x.qtdVendaEfetiva!==x.qtd) row.getCell(12).font={name:'Arial',size:9.5,color:{argb:'FFE58A00'},bold:true};
+        if(x.resultadoVenda!=null) row.getCell(16).font={name:'Arial',size:9.5,color:{argb:x.resultadoVenda>=0?'FF12A150':'FFD93655'},bold:true};
+      });
+      const lastV=1+vendidosR.length;
+      bodyBorders(wsVen,2,lastV); zebra(wsVen,2,lastV);
+      const vtV=vendidosR.reduce((s,x)=>s+x.vt,0),depV=vendidosR.reduce((s,x)=>s+(x.dep||0),0),resV=vendidosR.reduce((s,x)=>s+(x.atualVenda??x.atual??0),0);
+      const comVrV=vendidosR.filter(x=>x.vrvenda!=null);
+      const vrTotV=comVrV.reduce((s,x)=>s+x.vrvenda,0),resultTotV=comVrV.reduce((s,x)=>s+(x.resultadoVenda||0),0);
+      const totV=wsVen.addRow(['','','','TOTAL — '+int(vendidosR.length)+' itens','','',vtV,'','','','','',depV,resV,comVrV.length?vrTotV:null,comVrV.length?resultTotV:null]);
+      totV.getCell(7).numFmt=moneyFmt; totV.getCell(13).numFmt=moneyFmt; totV.getCell(14).numFmt=moneyFmt; totV.getCell(15).numFmt=moneyFmt; totV.getCell(16).numFmt=moneyFmt;
+      totalRow(wsVen,lastV+1);
+      wsVen.views=[{state:'frozen',ySplit:1}];
+      wsVen.autoFilter={from:{row:1,column:1},to:{row:1,column:16}};
+      const ignoradasXls=rows.filter(x=>x.vendaIgnorada).length;
+      if(ignoradasXls){
+        const noteRow=wsVen.getRow(lastV+3);
+        noteRow.getCell(1).value=`⚠ ${ignoradasXls} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.`;
+        noteRow.getCell(1).font={italic:true,size:9,color:{argb:'FFE58A00'},name:'Arial'};
+        wsVen.mergeCells(lastV+3,1,lastV+3,8);
+      }
+    }
 
     const buf=await wb.xlsx.writeBuffer();
     dl(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'GRUPO_LABMEDIC_Depreciacao_Equipamentos.xlsx');
@@ -1862,6 +2014,15 @@ function depGerarPDF(){
     const linhas=anosE.map(a=>`<tr>${depCells(esc(emp)+' — '+a,rowsEmp.filter(x=>x.ano===a))}</tr>`).join('');
     return linhas+`<tr class="tot">${depCells('Total '+esc(emp),rowsEmp)}</tr>`;
   }).join('');
+  const vendidosPdf=rows.filter(x=>x.vendido).slice().sort((a,b)=>(a.dtvenda?a.dtvenda.getTime():0)-(b.dtvenda?b.dtvenda.getTime():0));
+  const ignoradasPdf=rows.filter(x=>x.vendaIgnorada).length;
+  const trVendPdf=vendidosPdf.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${esc(x.empresa)}</td><td>${esc(x.nomeOrig||x.nome)}</td><td class="c">${esc(x.serie||'—')}</td><td class="n">${brl(x.vt)}</td><td class="c">${dt(x.dtent)}</td><td class="c">${dt(x.dtvenda)}</td><td class="n">${x.depMeses==null?'—':int(x.depMeses)}</td><td class="n">${int(x.qtd)}/${x.qtdVendaEfetiva==null?'—':int(x.qtdVendaEfetiva)}</td><td class="n">${nd(x.dep)}</td><td class="n">${nd(x.atualVenda)}</td><td class="n">${x.vrvenda==null?'N/D':brl(x.vrvenda)}</td><td class="n">${x.resultadoVenda==null?'N/D':brl(x.resultadoVenda)}</td></tr>`).join('');
+  const vtVP=vendidosPdf.reduce((s,x)=>s+x.vt,0),depVP=vendidosPdf.reduce((s,x)=>s+(x.dep||0),0),resVP=vendidosPdf.reduce((s,x)=>s+(x.atualVenda??x.atual??0),0);
+  const comVrPdf=vendidosPdf.filter(x=>x.vrvenda!=null);
+  const vrTotPdf=comVrPdf.reduce((s,x)=>s+x.vrvenda,0),resultTotPdf=comVrPdf.reduce((s,x)=>s+(x.resultadoVenda||0),0);
+  const secVendPdf=vendidosPdf.length?`<h2 class="sec">Equipamentos vendidos — depreciação apurada da entrada até a venda</h2>
+<table><thead><tr><th>#</th><th>Empresa</th><th>Equipamento</th><th>Nº de série</th><th>Valor de aquisição</th><th>Data entrada</th><th>Data venda</th><th>Meses</th><th>Qtd. compra/venda</th><th>Depreciação até a venda</th><th>Valor residual comparável</th><th>Valor de venda</th><th>Resultado</th></tr></thead>
+<tbody>${trVendPdf}<tr class="tot"><td colspan="4" class="c">TOTAL — ${int(vendidosPdf.length)} itens</td><td class="n">${brl(vtVP)}</td><td colspan="2"></td><td></td><td></td><td class="n">${brl(depVP)}</td><td class="n">${brl(resVP)}</td><td class="n">${comVrPdf.length?brl(vrTotPdf):'—'}</td><td class="n">${comVrPdf.length?brl(resultTotPdf):'—'}</td></tr></tbody></table>${ignoradasPdf?`<div class="box" style="margin-top:5pt;border-left:2.5pt solid #C8952B">⚠ ${ignoradasPdf} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.</div>`:''}`:(ignoradasPdf?`<div class="box" style="border-left:2.5pt solid #C8952B">⚠ ${ignoradasPdf} venda(s) com data anterior à da aquisição foram desconsideradas nesta seleção — item(ns) mantido(s) como ativo.</div>`:'');
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>GRUPO LABMEDIC — Relatório de depreciação de equipamentos</title>
 <style>
@@ -1910,9 +2071,11 @@ tr.tot td{background:#D9E2F3;font-weight:bold}
 <table><thead><tr><th>Empresa / Ano</th><th>Itens</th><th>Unidades</th><th>Valor de aquisição</th><th>Depreciação acum.</th><th>Valor atual</th><th>% depreciado</th></tr></thead>
 <tbody>${empresaRows}</tbody>
 <tfoot><tr><td colspan="7"><div style="border-top:.5pt solid #DFE4EE;padding-top:3pt;display:flex"><span>GRUPO LABMEDIC — relatório gerado automaticamente pelo Dashboard de equipamentos adquiridos · uso interno</span><span style="margin-left:auto">${esc(emissao)}</span></div></td></tr></tfoot></table>
+${secVendPdf}
 <div class="lg2"><b>Legendas e critérios:</b>
 Depreciação linear (método das quotas constantes), vida útil de <b>10 anos</b> (120 meses) e sem valor residual, conforme prazos admitidos pela legislação fiscal brasileira (IN RFB 1.700/2017, Anexo III — máquinas e equipamentos).
-Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limitada a 100% do valor. Valor atual = valor de aquisição − depreciação acumulada, apurado na data de referência (${dt(REF)}).
+Depreciação acumulada = valor de aquisição × meses decorridos ÷ 120, limitada a 100% do valor. Valor atual = valor de aquisição − depreciação acumulada, apurado na data de referência (${dt(REF)}). Para equipamentos <b>vendidos</b>, a depreciação é apurada somente entre a data de entrada (aquisição) e a data de venda, e o "valor atual" representa o valor contábil residual na data da venda.
+Vendas com data anterior à da aquisição são desconsideradas por inconsistência de pareamento entre a NF de entrada e a de saída — o item permanece classificado como ativo. Quando a NF de entrada agrega mais unidades do que as vendidas na NF de saída correspondente, o resultado (lucro/prejuízo) é apurado sobre o "valor residual comparável", proporcional à quantidade efetivamente vendida — e não sobre o valor residual do lote inteiro.
 Registros sem data ou sem valor de aquisição são excluídos do cálculo de depreciação (${int(k.semDados)} ${k.semDados===1?'registro':'registros'} nesta seleção). Valores em reais (R$), conforme a NF de origem, sem correção monetária.
 </div>
 <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
