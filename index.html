@@ -256,6 +256,20 @@ html[data-theme="dark"] .refdate .ttl::before{color:var(--gold)}
 .refdate .rst:hover{color:var(--navy)}
 html[data-theme="dark"] .refdate .rst{color:var(--gold2)}
 .refdate .info{font-size:11px;color:var(--mut);flex:1;min-width:200px;line-height:1.5}
+/* ---------- Filtro por periodo (entre datas) ---------- */
+.periodo{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:12px 16px;background:linear-gradient(135deg,var(--acc2) 0%,transparent 60%);
+  border:1px dashed var(--teal);border-radius:var(--radius-sm);margin-bottom:14px}
+.periodo .ttl{font-size:11px;text-transform:uppercase;letter-spacing:.9px;
+  color:var(--teal);font-weight:700;display:flex;align-items:center;gap:8px}
+.periodo .ttl::before{content:"\2637";font-size:14px}
+.periodo .fld{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--mut);font-weight:600}
+.periodo input[type=date]{max-width:170px;font-family:'JetBrains Mono',monospace;font-weight:600}
+.periodo .rst{background:transparent;border:none;color:var(--teal);
+  font-size:11.5px;font-weight:700;cursor:pointer;text-decoration:underline;padding:4px 6px;font-family:inherit}
+.periodo .info{font-size:11px;color:var(--mut);flex:1;min-width:200px;line-height:1.5}
+html[data-theme="dark"] .periodo{border-color:var(--teal2)}
+html[data-theme="dark"] .periodo .ttl,html[data-theme="dark"] .periodo .rst{color:var(--teal2)}
 
 /* ---------- KPI ---------- */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;margin-bottom:20px}
@@ -762,6 +776,14 @@ html[data-theme="dark"] .tax-kpi .v{color:#fff}
         <input type="date" id="fRef">
         <button class="rst" id="rstRef" title="Voltar para hoje">Usar data do Sistema</button>
         <div class="info">A depreciação (vida útil de 10 anos) e o valor atual dos equipamentos depenede da data.</div>
+      </div>
+
+      <div class="periodo">
+        <div class="ttl">Período (data de emissão da NF)</div>
+        <label class="fld">De <input type="date" id="fDe"></label>
+        <label class="fld">Até <input type="date" id="fAte"></label>
+        <button class="rst" id="rstPeriodo" title="Remover o filtro de período">Limpar período</button>
+        <div class="info">Exibe apenas os equipamentos adquiridos entre as datas informadas. Preencha apenas uma das datas para limitar somente o início ou o fim do intervalo.</div>
       </div>
 
       <div class="filters filters-primary">
@@ -1282,6 +1304,11 @@ function buildFilters(){
   msBuild('fMod',modVals);
   msBuild('fFam',famVals);
 }
+/* -------- Filtro por período (entre datas) -------- */
+function parseDateInput(v,fim){ if(!v)return null; const p=v.split('-').map(Number);
+  if(p.length!==3||!p[0])return null; return fim?new Date(p[0],p[1]-1,p[2],23,59,59,999):new Date(p[0],p[1]-1,p[2],0,0,0,0); }
+function noPeriodo(x,de,ate){ if(!de&&!ate)return true; const d=x.dtemi; if(!(d instanceof Date)||isNaN(d))return false;
+  if(de&&d<de)return false; if(ate&&d>ate)return false; return true; }
 function applyFilters(){
   const q=up($('fBusca').value.trim());
   BUSCA=q.length>0; $('avisoBusca').classList.toggle('hidden',!BUSCA);
@@ -1294,9 +1321,10 @@ function applyFilters(){
   const a=selected($('fAno')).map(Number),m=selected($('fMes')).map(Number),f=selected($('fForn')),
     mo=selected($('fMod')),fa=selected($('fFam')),cf=selected($('fCfop')),em=selected($('fEmp')),
     min=+$('fMin').value||0;
+  const de=parseDateInput($('fDe').value), ate=parseDateInput($('fAte').value,true);
   VIEW=ALL.filter(x=>(!a.length||a.includes(x.ano))&&(!m.length||m.includes(x.mes))&&(!f.length||f.includes(x.forn))&&
     (!mo.length||mo.includes(x.nome))&&(!fa.length||fa.includes(x.fam))&&(!cf.length||cf.includes(x.cfop))&&
-    (!em.length||em.includes(x.empresa))&&x.vt>=min);
+    (!em.length||em.includes(x.empresa))&&x.vt>=min&&noPeriodo(x,de,ate));
   render();
 }
 function agg(arr,keyfn){ const m=new Map();
@@ -1481,11 +1509,16 @@ $('xls').onclick=()=>{ const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sh
   XLSX.writeFile(wb,'Equipamentos_LABMEDIC.xlsx'); };
 $('print').onclick=()=>gerarPDF();
 function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escopoPeriodo(){ const de=parseDateInput($('fDe').value),ate=parseDateInput($('fAte').value,true);
+  if(de&&ate)return 'Período: '+dt(de)+' a '+dt(ate);
+  if(de)return 'Período: a partir de '+dt(de);
+  if(ate)return 'Período: até '+dt(ate);
+  return null; }
 function buildEscopo(){
   return BUSCA?('Busca soberana: “'+esc($('fBusca').value.trim())+'” (sobrepõe os filtros)')
     :['fAno','fMes','fForn','fMod','fFam','fCfop','fEmp'].map(id=>{const v=selected($(id));
       if(!v.length)return null; const rot={fAno:'Ano',fMes:'Mês',fForn:'Fornecedor',fMod:'Equipamento',fFam:'Família',fCfop:'CFOP',fEmp:'Empresa adquirente'}[id];
-      return rot+': '+(id==='fMes'?v.map(n=>MES[+n]).join(', '):v.join(', '));}).filter(Boolean).join(' · ')||'Todos os registros (nenhum filtro aplicado)';
+      return rot+': '+(id==='fMes'?v.map(n=>MES[+n]).join(', '):v.join(', '));}).concat([escopoPeriodo()]).filter(Boolean).join(' · ')||'Todos os registros (nenhum filtro aplicado)';
 }
 function gerarPDF(){
   const rows=sortedRows();
@@ -1687,9 +1720,11 @@ function setEqAberta(v){
 $('hdrEq').onclick=()=>setEqAberta(!eqAberta);
 setEqAberta(false);
 ['fAno','fMes','fCfop','fEmp'].forEach(id=>$(id).onchange=applyFilters);
+['fDe','fAte'].forEach(id=>$(id).onchange=applyFilters);
+$('rstPeriodo').onclick=()=>{ $('fDe').value=''; $('fAte').value=''; applyFilters(); };
 $('fBusca').oninput=applyFilters; $('fMin').oninput=applyFilters;
 $('clear').onclick=()=>{ ['fAno','fMes','fCfop','fEmp'].forEach(id=>[...$(id).options].forEach(o=>o.selected=false));
-  msClearAll(); $('fBusca').value=''; $('fMin').value=0; applyFilters(); };
+  msClearAll(); $('fBusca').value=''; $('fMin').value=0; $('fDe').value=''; $('fAte').value=''; applyFilters(); };
 
 /* Data de referência para a depreciação */
 function pad2(n){return String(n).padStart(2,'0');}
